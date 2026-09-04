@@ -1,0 +1,45 @@
+# Project TODO
+
+- [x] Apply Flash visual tokens: neon-lime accent, obsidian surfaces, off-white canvas, geometric typography, pill CTAs, rounded geometry, motion, and accessible controls
+- [x] Establish shared public, buyer, seller, and admin navigation shells with responsive mobile bottom bars
+- [x] Build public landing page with promotional hero, deal countdown, categories, wholesale deals, and role entry points
+- [x] Build role-aware login and dual-path signup flows
+- [x] Build five-step seller onboarding with document upload progress and verification-pending state
+- [x] Build buyer catalog with search, grid/list views, multi-criteria filter drawer, MOQ, discount, stock, and express filters
+- [x] Build product detail pages with gallery, zoom, tiered pricing, MOQ-aware quantity, spec-sheet action, bulk cart, and RFQ actions
+- [x] Build persistent multi-seller cart with merchant grouping, tier recalculation, tax-exempt toggle, and drawer mode
+- [x] Build RFQ creation and buyer quote negotiation inbox
+- [x] Build corporate checkout with address, payment/PO/Net-30, approval threshold, confirmation, and tracking stepper
+- [x] Build buyer order history with invoice download and return request interactions
+- [x] Build Seller Central dashboard with KPIs, urgent actions, and sales analytics
+- [x] Build seller listings table with responsive mobile cards and bulk actions
+- [x] Build multi-tab seller listing create/edit wizard with media, pricing, inventory, shipping, and compliance
+- [x] Build seller order fulfillment workflow with dispatch drawer and tracking actions
+- [x] Build seller RFQ counter-offer workflow, payout ledger, and account health metrics
+- [x] Build admin dashboard, seller KYB review, product moderation, and dispute arbitration workflows
+- [x] Define product, seller, listing, order, quote, cart, and dispute domain models
+- [x] Add browser-persistent connected state for catalog, cart, quotes, orders, seller actions, and admin decisions
+- [x] Add secure server-side file upload references and metadata for onboarding documents and seller media/spec sheets
+- [x] Add backend contracts, schema/migrations, and query helpers for durable marketplace data
+- [x] Add Vitest coverage for core marketplace state and workflow behavior
+- [x] Verify build, typecheck, tests, desktop layout, and mobile layout before delivery
+- [x] Replace demo-only auth links with role-aware authentication state and redirects
+- [x] Wire all catalog filters and debounced search to actual results
+- [x] Add PDP image zoom and downloadable spec-sheet behavior
+- [x] Recalculate cart totals using volume tiers, tax exemption, and drawer mode
+- [x] Add dedicated RFQ creation and seller counter-offer persistence
+- [x] Persist onboarding, checkout, order, seller, and admin workflow state
+- [x] Add seller listing wizard, bulk actions, dispatch drawer, and admin decision actions
+- [x] Implement server-side file upload handling with retained file metadata
+- [x] Add full marketplace domain types and broaden workflow test coverage
+- [x] Implement real role-aware auth/session gating for buyer, seller, and admin routes
+- [x] Wire seller media and specification uploads to retained server file references
+- [x] Add debounced catalog search and real downloadable specification-sheet references
+- [x] Persist RFQ creation/counter-offers, checkout/order transitions, dispatch updates, and admin decisions
+- [x] Replace toast-only bulk/admin/dispatch actions with state mutations and add workflow test coverage
+- [x] Add marketplace query helpers in server/db.ts and server procedures for sellers, listings, orders, quotes, and disputes
+- [x] Replace demo-only role storage with authenticated session-backed route gating and server authorization
+- [x] Wire seller listing media and spec-sheet uploads to the protected upload procedure and listing metadata
+- [x] Back specification downloads with retained uploaded references instead of generated data URLs
+- [x] Persist and render dispatch, admin decisions, and order status transitions across routes
+- [x] Add Vitest coverage for RFQ creation, counter-offers, dispatch, admin decisions, and persisted workflow state

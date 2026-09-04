@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1788426999995,
+      "tag": "0000_white_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1788427909035,
+      "tag": "0001_last_captain_britain",
+      "breakpoints": true
+    }
+  ]
+}
