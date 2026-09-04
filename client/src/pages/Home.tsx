@@ -1,64 +1,1167 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, BarChart3, Bell, Box, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardList, Download, FileText, Filter, LayoutDashboard, Menu, MoreHorizontal, Package, Plus, Quote, Search, Settings2, ShoppingCart, SlidersHorizontal, Sparkles, Store, Truck, Upload, Users, Wallet, X, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Box,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  ClipboardList,
+  Download,
+  FileText,
+  Filter,
+  LayoutDashboard,
+  Menu,
+  Minus,
+  MoreHorizontal,
+  Package,
+  Plus,
+  Quote,
+  Search,
+  Settings2,
+  ShoppingCart,
+  SlidersHorizontal,
+  Sparkles,
+  Store,
+  Truck,
+  Upload,
+  Users,
+  Wallet,
+  X,
+  Zap
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import SellerDashboardView from './SellerDashboard';
+import {
+  supabase,
+  getLiveCatalog,
+  decrementProductStock,
+  VALID_CATEGORIES,
+  type SupabaseProduct
+} from '@/lib/supabase';
+import { useLiveProducts } from '@/lib/useLiveProducts';
+import { SafeImage } from '@/components/SafeImage';
 
-const heroImage = 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80';
+const heroImage =
+  'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80';
+
 const categories = [
-  ['Industrial', '01', 'bg-[#e8f0ff]'], ['Electronics', '02', 'bg-[#eef8dc]'], ['Workplace', '03', 'bg-[#f5e7d7]'], ['Packaging', '04', 'bg-[#ece8ff]'], ['Apparel', '05', 'bg-[#f8dfe4]']
-];
-const products = [
-  { id:'p1', name:'AeroCharge Pro 65W GaN Adapter', category:'Electronics', seller:'Northstar Components', price:1499, old:1999, moq:10, stock:248, badge:'FLASH DEAL', image:'https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=700&q=80' },
-  { id:'p2', name:'Recycled Kraft Shipping Cartons', category:'Packaging', seller:'Packsmith Industries', price:42, old:55, moq:100, stock:4200, badge:'BULK SAVER', image:'https://images.unsplash.com/photo-1607166452427-7e447e94c8c6?auto=format&fit=crop&w=700&q=80' },
-  { id:'p3', name:'Merino Blend Executive Overshirt', category:'Apparel', seller:'Common Thread Co.', price:1299, old:1899, moq:12, stock:86, badge:'NEW', image:'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=700&q=80' },
-  { id:'p4', name:'Modular Warehouse Safety Barrier', category:'Industrial', seller:'Forge & Field', price:3890, old:4490, moq:4, stock:31, badge:'EXPRESS', image:'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=700&q=80' },
-  { id:'p5', name:'Ergonomic Mesh Task Chair', category:'Workplace', seller:'Form Office Supply', price:8450, old:9990, moq:2, stock:64, badge:'TOP RATED', image:'https://images.unsplash.com/photo-1505843490701-5be5d64d3a7b?auto=format&fit=crop&w=700&q=80' },
-  { id:'p6', name:'Precision Label Printer 4XL', category:'Electronics', seller:'Northstar Components', price:11200, old:13990, moq:1, stock:18, badge:'LOW STOCK', image:'https://images.unsplash.com/photo-1612815154858-60aa4c59e479?auto=format&fit=crop&w=700&q=80' },
+  ['Industrial', '01', 'bg-[#0D1117] border border-neutral-800'],
+  ['Electronics', '02', 'bg-[#0D1117] border border-neutral-800'],
+  ['Workplace', '03', 'bg-[#0D1117] border border-neutral-800'],
+  ['Packaging', '04', 'bg-[#0D1117] border border-neutral-800'],
+  ['Apparel', '05', 'bg-[#0D1117] border border-neutral-800']
 ];
 
-type CartItem = { productId:string; qty:number };
-function usePersistentState<T>(key:string, initial:T){ const [value,setValue]=useState<T>(()=>{try{const saved=localStorage.getItem(key);return saved?JSON.parse(saved):initial}catch{return initial}}); useEffect(()=>localStorage.setItem(key,JSON.stringify(value)),[key,value]); return [value,setValue] as const }
-function useCart() { const [cart,setCart] = usePersistentState<CartItem[]>('flash-cart', []); return {cart, add:(id:string, qty=1)=>setCart(c=>{const hit=c.find(x=>x.productId===id); return hit?c.map(x=>x.productId===id?{...x,qty:x.qty+qty}:x):[...c,{productId:id,qty}]}), setQty:(id:string,qty:number)=>setCart(c=>c.map(x=>x.productId===id?{...x,qty:Math.max(1,qty)}:x)), remove:(id:string)=>setCart(c=>c.filter(x=>x.productId!==id)), clear:()=>setCart([])} }
+type CartItem = { productId: string; qty: number };
 
-function FlashLogo(){return <Link href="/"><div className="flex items-center gap-2 font-extrabold tracking-tight"><span className="grid h-8 w-8 place-items-center rounded-xl bg-[#ccff00] text-[#0a0b0d]"><Zap size={18} fill="currentColor"/></span><span className="text-lg">flash<span className="text-[#747b87]">.biz</span></span></div></Link>}
-function PrimaryButton({children,onClick,href,className='' }:{children:any;onClick?:()=>void;href?:string;className?:string}){const body=<button onClick={onClick} className={`btn-flash inline-flex items-center justify-center gap-2 rounded-full bg-[#0a0b0d] px-5 py-3 text-xs font-extrabold uppercase tracking-[.16em] text-[#ccff00] ${className}`}>{children}</button>; return href?<Link href={href}>{body}</Link>:body}
-function Header({cartCount=0, dark=false}:{cartCount?:number;dark?:boolean}){const [menu,setMenu]=useState(false); return <header className={`relative z-30 border-b ${dark?'border-white/10 bg-[#0a0b0d] text-white':'border-[#e1e4e8] bg-white/90 text-[#101217]'} backdrop-blur`}><div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8"><FlashLogo/><nav className="hidden items-center gap-7 text-sm font-semibold md:flex"><Link href="/shop">Marketplace</Link><Link href="/buyer/quotes">Quotes</Link><Link href="/seller/dashboard">Sell on Flash</Link></nav><div className="hidden items-center gap-3 md:flex"><Link href="/auth/login" className="text-xs font-extrabold uppercase tracking-widest">Sign in</Link><PrimaryButton href="/shop" className="px-4 py-2.5">Shop now <ArrowRight size={14}/></PrimaryButton><Link href="/cart" className="relative rounded-full border border-[#e1e4e8] p-2.5"><ShoppingCart size={17}/>{cartCount>0&&<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#ccff00] px-1 text-[10px] font-black text-black">{cartCount}</span>}</Link></div><button className="rounded-lg p-2 md:hidden" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button></div>{menu&&<div className="border-t border-[#e1e4e8] bg-white px-4 py-4 md:hidden"><div className="grid gap-3 text-sm font-bold"><Link href="/shop">Marketplace</Link><Link href="/buyer/quotes">Quotes</Link><Link href="/seller/dashboard">Sell on Flash</Link><Link href="/auth/login">Sign in</Link></div></div>}</header>}
-function MobileBar({role='buyer'}:{role?:'buyer'|'seller'}){return <div className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-white/10 bg-[#0a0b0d]/95 text-white backdrop-blur md:hidden">{(role==='buyer'?[['/','Home',LayoutDashboard],['/shop','Search',Search],['/cart','Cart',ShoppingCart],['/buyer/quotes','Quotes',Quote],['/auth/login','Account',Users]]:[['/seller/dashboard','Home',LayoutDashboard],['/seller/listings','Inventory',Package],['/seller/orders','Orders',ClipboardList],['/seller/rfq','Quotes',Quote],['/seller/health','Profile',Users]]).map(([href,label,I]:any)=><Link href={href as string} key={label as string} className="flex flex-col items-center gap-1 text-[10px] font-bold text-white/60"><I size={17}/><span>{label}</span></Link>)}</div>}
-function PageTitle({eyebrow,title,desc}:{eyebrow:string;title:string;desc?:string}){return <div className="mb-8"><div className="mb-3 text-[11px] font-extrabold uppercase tracking-[.22em] text-[#7a828f]">{eyebrow}</div><h1 className="max-w-3xl text-3xl font-extrabold tracking-tight sm:text-5xl">{title}</h1>{desc&&<p className="mt-3 max-w-2xl text-base text-[#69717d]">{desc}</p>}</div>}
-function Home(){const {cart}=useCart(); return <div className="min-h-screen"><Header cartCount={cart.reduce((a,b)=>a+b.qty,0)}/><main><section className="flash-dark-grid overflow-hidden text-white"><div className="mx-auto grid max-w-7xl items-end gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-24"><div><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#ccff00]/30 bg-[#ccff00]/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-[#ccff00]"><Sparkles size={13}/> The operating system for business buying</div><h1 className="max-w-3xl text-5xl font-extrabold leading-[.98] tracking-[-.06em] sm:text-7xl">Buy better.<br/><span className="text-[#ccff00]">Move faster.</span></h1><p className="mt-7 max-w-xl text-lg leading-8 text-white/65">The B2B marketplace built for teams that need wholesale pricing, verified supply, and zero friction from quote to delivery.</p><div className="mt-9 flex flex-wrap gap-3"><PrimaryButton href="/shop">Explore marketplace <ArrowRight size={15}/></PrimaryButton><Link href="/auth/signup" className="inline-flex items-center rounded-full border border-white/20 px-5 py-3 text-xs font-extrabold uppercase tracking-[.16em] text-white">Start selling</Link></div><div className="mt-14 grid max-w-xl grid-cols-3 gap-5 border-t border-white/10 pt-6"><div><div className="font-mono text-xl text-[#ccff00]">12.4k+</div><div className="mt-1 text-[10px] uppercase tracking-widest text-white/45">Verified SKUs</div></div><div><div className="font-mono text-xl text-[#ccff00]">8.2%</div><div className="mt-1 text-[10px] uppercase tracking-widest text-white/45">Avg. savings</div></div><div><div className="font-mono text-xl text-[#ccff00]">24h</div><div className="mt-1 text-[10px] uppercase tracking-widest text-white/45">Quote response</div></div></div></div><div className="relative min-h-[380px] overflow-hidden rounded-[2rem] border border-white/10 bg-[#13161d]"><img src={heroImage} className="absolute inset-0 h-full w-full object-cover opacity-55"/><div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0d] via-transparent to-transparent"/><div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/15 bg-[#0a0b0d]/75 p-4 backdrop-blur"><div className="flex items-center justify-between"><div><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]">Live fulfillment</div><div className="mt-1 text-sm font-bold">12,847 orders moving today</div></div><Truck className="text-[#ccff00]" size={22}/></div><div className="mt-4 h-1.5 rounded-full bg-white/10"><div className="h-full w-[78%] rounded-full bg-[#ccff00]"/></div></div></div></div></section><section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"><div className="flex items-end justify-between"><div><div className="text-[11px] font-extrabold uppercase tracking-[.2em] text-[#7a828f]">Browse by need</div><h2 className="mt-2 text-2xl font-extrabold tracking-tight">Find your next advantage.</h2></div><Link href="/shop" className="hidden text-xs font-extrabold uppercase tracking-widest md:block">View all categories <ArrowRight className="ml-2 inline" size={14}/></Link></div><div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-5">{categories.map(([name,num,bg])=><Link href={`/shop?category=${name}`} key={name} className={`group ${bg} rounded-2xl p-4 transition hover:-translate-y-1`}><div className="flex justify-between text-xs font-extrabold"><span>0{num}</span><ArrowRight size={15} className="opacity-50 transition group-hover:translate-x-1"/></div><div className="mt-14 text-sm font-extrabold">{name}</div></Link>)}</div></section><section className="bg-white"><div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="text-[11px] font-extrabold uppercase tracking-[.2em] text-[#7a828f]">Flash picks / 07:42:19 left</div><h2 className="mt-2 text-2xl font-extrabold tracking-tight">Wholesale deals, dialed in.</h2></div><PrimaryButton href="/shop">Shop all deals <ArrowRight size={15}/></PrimaryButton></div><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{products.slice(0,4).map(p=><ProductCard p={p} key={p.id}/>)}</div></div></section></main><MobileBar/></div>}
-function ProductCard({p}:{p:any}){const {add}=useCart(); return <div className="group overflow-hidden rounded-2xl border border-[#e1e4e8] bg-white transition hover:-translate-y-1 hover:shadow-xl"><Link href={`/product/${p.id}`}><div className="relative aspect-square overflow-hidden bg-[#f0f2f3] p-5"><img src={p.image} className="h-full w-full object-contain mix-blend-multiply transition duration-500 group-hover:scale-105"/><span className="absolute left-3 top-3 rounded-full bg-[#0a0b0d] px-2.5 py-1 text-[9px] font-extrabold tracking-widest text-[#ccff00]">{p.badge}</span></div></Link><div className="p-4"><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">{p.category} · {p.seller}</div><Link href={`/product/${p.id}`} className="mt-2 block min-h-11 text-sm font-extrabold leading-5">{p.name}</Link><div className="mt-3 flex items-end justify-between"><div><div className="font-mono text-lg font-medium">₹{p.price.toLocaleString('en-IN')}</div><div className="text-[11px] text-[#8a929d] line-through">₹{p.old.toLocaleString('en-IN')}</div></div><button onClick={()=>{add(p.id,p.moq);toast.success(`${p.moq} units added to bulk cart`)}} className="grid h-9 w-9 place-items-center rounded-full bg-[#ccff00] text-[#0a0b0d] transition hover:scale-105"><Plus size={17}/></button></div><div className="mt-3 flex items-center justify-between border-t border-[#eef0f2] pt-3 text-[10px] font-bold text-[#69717d]"><span>MOQ {p.moq} units</span><span className="text-[#16a34a]">{p.stock} in stock</span></div></div></div>}
-function Shop(){
-  const {cart}=useCart(); const [searchInput,setSearchInput]=useState(''); const [query,setQuery]=useState(''); useEffect(()=>{const timer=window.setTimeout(()=>setQuery(searchInput),280); return ()=>window.clearTimeout(timer)},[searchInput]); const [category,setCategory]=useState('All'); const [view,setView]=useState<'grid'|'list'>('grid'); const [filter,setFilter]=useState(false); const [priceMax,setPriceMax]=useState(100000); const [minMoq,setMinMoq]=useState(0); const [minDiscount,setMinDiscount]=useState(0); const [stockOnly,setStockOnly]=useState(false); const [expressOnly,setExpressOnly]=useState(false);
-  const filtered=products.filter(p=>{const discount=(1-p.price/p.old)*100; return (category==='All'||p.category===category)&&p.name.toLowerCase().includes(query.toLowerCase())&&p.price<=priceMax&&p.moq>=minMoq&&discount>=minDiscount&&(!stockOnly||p.stock>0)&&(!expressOnly||p.badge==='EXPRESS'||p.category==='Electronics')});
-  return <div className="min-h-screen"><Header cartCount={cart.reduce((a,b)=>a+b.qty,0)}/><main className="mx-auto max-w-7xl px-4 py-10 pb-24 sm:px-6 lg:px-8"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><PageTitle eyebrow="Marketplace / 12,847 verified SKUs" title="Buy at business speed." desc="Wholesale pricing, verified sellers, and fulfillment you can count on."/><button onClick={()=>setFilter(true)} className="mb-8 inline-flex items-center gap-2 self-start rounded-full bg-[#0a0b0d] px-4 py-3 text-xs font-extrabold uppercase tracking-widest text-[#ccff00] lg:hidden"><SlidersHorizontal size={14}/> Filters</button></div><div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#e1e4e8] bg-white p-3 sm:flex-row"><div className="flex flex-1 items-center gap-3 rounded-xl bg-[#f6f7f8] px-4"><Search size={18} className="text-[#7a828f]"/><input value={searchInput} onChange={e=>setSearchInput(e.target.value)} placeholder="Search products, SKUs, or sellers" className="w-full bg-transparent py-3 text-sm outline-none"/></div><div className="flex gap-2 overflow-x-auto">{['All','Industrial','Electronics','Workplace','Packaging','Apparel'].map(x=><button onClick={()=>setCategory(x)} key={x} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-extrabold ${category===x?'bg-[#ccff00] text-black':'bg-[#f1f3f4] text-[#69717d]'}`}>{x}</button>)}</div><div className="hidden items-center gap-1 border-l border-[#e1e4e8] pl-3 lg:flex"><button onClick={()=>setView('grid')} className={`rounded-lg p-2 ${view==='grid'?'bg-[#0a0b0d] text-[#ccff00]':''}`}><LayoutDashboard size={16}/></button><button onClick={()=>setView('list')} className={`rounded-lg p-2 ${view==='list'?'bg-[#0a0b0d] text-[#ccff00]':''}`}><ClipboardList size={16}/></button></div></div><div className="grid gap-8 lg:grid-cols-[220px_1fr]"><aside className="hidden lg:block"><div className="sticky top-5 rounded-2xl border border-[#e1e4e8] bg-white p-5"><div className="flex items-center justify-between"><span className="text-xs font-extrabold uppercase tracking-widest">Filters</span><button onClick={()=>{setCategory('All');setSearchInput('');setQuery('');setPriceMax(100000);setMinMoq(0);setMinDiscount(0);setStockOnly(false);setExpressOnly(false)}} className="text-[10px] font-bold text-[#7a828f]">Reset</button></div><div className="mt-7 space-y-6"><FilterGroup title="Price range"><div className="font-mono text-sm">₹0 — ₹{priceMax.toLocaleString('en-IN')}</div><input value={priceMax} min="0" max="100000" step="1000" onChange={e=>setPriceMax(Number(e.target.value))} type="range" className="mt-3 w-full accent-[#ccff00]"/></FilterGroup><FilterGroup title="MOQ"><select value={minMoq} onChange={e=>setMinMoq(Number(e.target.value))} className="w-full rounded-xl border border-[#e1e4e8] px-3 py-2 text-sm"><option value="0">Any quantity</option><option value="10">10+ units</option><option value="50">50+ units</option><option value="100">100+ units</option></select></FilterGroup><FilterGroup title="Fulfillment"><label className="flex items-center gap-2 text-sm"><input checked={stockOnly} onChange={e=>setStockOnly(e.target.checked)} type="checkbox" className="accent-[#ccff00]"/> In-stock only</label><label className="mt-2 flex items-center gap-2 text-sm"><input checked={expressOnly} onChange={e=>setExpressOnly(e.target.checked)} type="checkbox" className="accent-[#ccff00]"/> Flash Express</label></FilterGroup><FilterGroup title="Minimum discount"><div className="grid grid-cols-3 gap-2">{[10,20,30].map(x=><button onClick={()=>setMinDiscount(x)} className={`rounded-lg border px-2 py-2 text-xs font-bold ${minDiscount===x?'border-[#ccff00] bg-[#fbfff0]':''}`} key={x}>{x}%</button>)}</div></FilterGroup></div></div></aside><section><div className="mb-4 flex items-center justify-between text-xs text-[#69717d]"><span><b className="text-[#101217]">{filtered.length}</b> products matched</span><button className="flex items-center gap-1 font-bold">Sort: Recommended <ChevronDown size={14}/></button></div><div className={view==='grid'?'grid gap-4 sm:grid-cols-2 xl:grid-cols-3':'grid gap-3'}>{filtered.map(p=>view==='grid'?<ProductCard p={p} key={p.id}/>:<ProductRow p={p} key={p.id}/>)}</div></section></div></main><MobileBar/>{filter&&<Drawer title="Filter marketplace" onClose={()=>setFilter(false)} side="left"><div className="space-y-7"><FilterGroup title="Categories">{['All','Industrial','Electronics','Workplace','Packaging','Apparel'].map(x=><button onClick={()=>{setCategory(x);setFilter(false)}} key={x} className={`block w-full rounded-xl px-3 py-3 text-left text-sm font-bold ${category===x?'bg-[#ccff00]':'bg-[#f6f7f8]'}`}>{x}</button>)}</FilterGroup><FilterGroup title="Price range"><div className="font-mono text-sm">₹0 — ₹{priceMax.toLocaleString('en-IN')}</div><input value={priceMax} min="0" max="100000" step="1000" onChange={e=>setPriceMax(Number(e.target.value))} type="range" className="mt-3 w-full accent-[#ccff00]"/></FilterGroup><FilterGroup title="MOQ"><select value={minMoq} onChange={e=>setMinMoq(Number(e.target.value))} className="w-full rounded-xl border border-[#e1e4e8] px-3 py-2 text-sm"><option value="0">Any quantity</option><option value="10">10+ units</option><option value="50">50+ units</option><option value="100">100+ units</option></select></FilterGroup><FilterGroup title="Options"><label className="flex items-center gap-2 text-sm"><input checked={stockOnly} onChange={e=>setStockOnly(e.target.checked)} type="checkbox" className="accent-[#ccff00]"/> In-stock only</label><label className="mt-3 flex items-center gap-2 text-sm"><input checked={expressOnly} onChange={e=>setExpressOnly(e.target.checked)} type="checkbox" className="accent-[#ccff00]"/> Flash Express delivery</label></FilterGroup></div></Drawer>}</div>
+function usePersistentState<T>(key: string, initial: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : initial;
+    } catch {
+      return initial;
+    }
+  });
+  useEffect(() => localStorage.setItem(key, JSON.stringify(value)), [key, value]);
+  return [value, setValue] as const;
 }
-function FilterGroup({title,children}:{title:string;children:any}){return <div><div className="mb-3 text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">{title}</div>{children}</div>}
-function ProductRow({p}:{p:any}){const {add}=useCart(); return <div className="flex items-center gap-4 rounded-2xl border border-[#e1e4e8] bg-white p-3"><img src={p.image} className="h-20 w-20 rounded-xl bg-[#f0f2f3] object-contain mix-blend-multiply"/><div className="min-w-0 flex-1"><div className="text-[10px] font-bold uppercase tracking-widest text-[#7a828f]">{p.category} · {p.seller}</div><Link href={`/product/${p.id}`} className="mt-1 block truncate text-sm font-extrabold">{p.name}</Link><div className="mt-2 flex gap-4 text-xs"><span className="font-mono">₹{p.price.toLocaleString('en-IN')}</span><span className="text-[#16a34a]">MOQ {p.moq}</span></div></div><button onClick={()=>{add(p.id,p.moq);toast.success('Added to cart')}} className="rounded-full bg-[#ccff00] p-3"><Plus size={16}/></button></div>}
-function Drawer({title,onClose,children,side='right'}:{title:string;onClose:()=>void;children:any;side?:'left'|'right'}){return <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"><div className={`absolute ${side==='right'?'right-0':'left-0'} top-0 flex h-full w-full max-w-[440px] flex-col bg-white p-6 shadow-2xl`}><div className="flex items-center justify-between border-b border-[#e1e4e8] pb-5"><h2 className="text-lg font-extrabold">{title}</h2><button onClick={onClose} className="rounded-full bg-[#f0f2f3] p-2"><X size={18}/></button></div><div className="flex-1 overflow-y-auto py-6">{children}</div></div></div>}
-function ProductPage({id}:{id:string}){const p=products.find(x=>x.id===id)||products[0]; const {add}=useCart(); const [qty,setQty]=useState(p.moq); const [zoom,setZoom]=useState(false); const tier=qty>=50?Math.round(p.price*.78):qty>=10?Math.round(p.price*.87):p.price; return <div className="min-h-screen"><Header/><main className="mx-auto max-w-7xl px-4 py-10 pb-24 sm:px-6 lg:px-8"><Link href="/shop" className="mb-8 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-[#69717d]"><ChevronLeft size={14}/> Back to marketplace</Link><div className="grid gap-10 lg:grid-cols-2"><div className="rounded-[2rem] bg-white p-5"><button onClick={()=>setZoom(true)} className="block aspect-square w-full overflow-hidden rounded-3xl bg-[#f0f2f3] p-8"><img src={p.image} className="h-full w-full object-contain mix-blend-multiply"/></button><div className="mt-4 grid grid-cols-4 gap-3">{[p.image,p.image,p.image].map((x,i)=><div key={i} className="aspect-square rounded-xl bg-[#f0f2f3] p-2"><img src={x} className="h-full w-full object-contain mix-blend-multiply"/></div>)}</div></div><div><div className="text-xs font-extrabold uppercase tracking-widest text-[#7a828f]">{p.category} / {p.seller}</div><h1 className="mt-3 text-4xl font-extrabold tracking-tight">{p.name}</h1><div className="mt-5 flex items-baseline gap-3"><span className="font-mono text-3xl">₹{tier.toLocaleString('en-IN')}</span><span className="text-sm text-[#7a828f] line-through">₹{p.old.toLocaleString('en-IN')}</span><span className="rounded-full bg-[#ccff00] px-2 py-1 text-[10px] font-extrabold">WHOLESALE</span></div><p className="mt-5 leading-7 text-[#69717d]">Built for high-throughput teams that value reliable supply and predictable unit economics. Certified for business use with a 12-month supplier warranty.</p><div className="mt-7 rounded-2xl border border-[#e1e4e8] bg-white p-4"><div className="mb-3 flex items-center justify-between"><span className="text-xs font-extrabold uppercase tracking-widest">Tiered quantity pricing</span><span className="text-[10px] font-bold text-[#16a34a]">Save more as you scale</span></div>{[[1,p.price],[10,Math.round(p.price*.87)],[50,Math.round(p.price*.78)]].map(([min,price])=><div key={min} className={`flex items-center justify-between border-t border-[#eef0f2] py-3 text-sm ${qty>=min?'font-extrabold':''}`}><span>{min}+ units</span><span className="font-mono">₹{(price as number).toLocaleString('en-IN')} / unit</span></div>)}</div><div className="mt-6 flex items-center justify-between"><div><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">Quantity · MOQ {p.moq}</div><div className="mt-2 flex items-center rounded-full border border-[#e1e4e8]"><button onClick={()=>setQty(Math.max(p.moq,qty-1))} className="px-4 py-2">−</button><input value={qty} onChange={e=>setQty(Math.max(p.moq,Number(e.target.value)||p.moq))} className="w-14 bg-transparent text-center font-mono outline-none"/><button onClick={()=>setQty(qty+1)} className="px-4 py-2">+</button></div></div><div className="text-right"><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">Line total</div><div className="mt-2 font-mono text-xl">₹{(tier*qty).toLocaleString('en-IN')}</div></div></div><div className="mt-6 flex flex-col gap-3 sm:flex-row"><PrimaryButton onClick={()=>{add(p.id,qty);toast.success('Bulk order added to cart')}} className="flex-1">Add to bulk cart <ShoppingCart size={15}/></PrimaryButton><button onClick={()=>toast.success('RFQ draft started for this seller')} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[#0a0b0d] px-5 py-3 text-xs font-extrabold uppercase tracking-widest">Request quote <Quote size={15}/></button></div><a href={`data:text/plain;charset=utf-8,${encodeURIComponent(`${p.name}\nSKU: ${p.id.toUpperCase()}\nSupplier: ${p.seller}\nCompliance: Verified for business use`)}`} download={`${p.id}-spec-sheet.txt`} className="mt-5 flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest"><Download size={14}/> Download compliance spec sheet</a></div></div></main><MobileBar/>{zoom&&<div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-6" onClick={()=>setZoom(false)}><div className="relative max-h-[90vh] max-w-3xl rounded-3xl bg-white p-6"><button onClick={()=>setZoom(false)} className="absolute right-4 top-4 rounded-full bg-[#0a0b0d] p-2 text-white"><X size={16}/></button><img src={p.image} className="max-h-[80vh] w-full object-contain mix-blend-multiply"/><div className="mt-3 text-center text-xs font-extrabold uppercase tracking-widest">Click outside to close · {p.name}</div></div></div>}</div>}
-function Cart(){const {cart,setQty,remove}=useCart(); const [taxExempt,setTaxExempt]=usePersistentState('flash-tax-exempt',false); const [drawer,setDrawer]=useState(false); const items=cart.map(x=>({...x,p:products.find(p=>p.id===x.productId)!})).filter(x=>x.p); const unit=(p:any,q:number)=>q>=50?Math.round(p.price*.78):q>=10?Math.round(p.price*.87):p.price; const total=items.reduce((s,x)=>s+unit(x.p,x.qty)*x.qty,0); const tax=taxExempt?0:Math.round(total*.18); return <div className="min-h-screen"><Header cartCount={cart.reduce((a,b)=>a+b.qty,0)}/><main className="mx-auto max-w-7xl px-4 py-10 pb-24 sm:px-6 lg:px-8"><PageTitle eyebrow="Bulk cart / 2 sellers" title="Ready when your team is." desc="Your cart is saved automatically. Prices update as you reach volume tiers."/>{items.length===0?<div className="rounded-3xl border border-dashed border-[#cfd4d9] bg-white p-14 text-center"><ShoppingCart className="mx-auto text-[#a0a7b0]" size={38}/><h2 className="mt-4 text-xl font-extrabold">Your cart is empty</h2><Link href="/shop" className="mt-6 inline-block text-xs font-extrabold uppercase tracking-widest underline">Browse marketplace</Link></div>:<div className="grid gap-8 lg:grid-cols-[1fr_360px]"><div className="space-y-5">{items.map(x=><div className="rounded-2xl border border-[#e1e4e8] bg-white p-5" key={x.p.id}><div className="mb-4 flex items-center gap-2 text-sm font-extrabold"><Store size={16}/> {x.p.seller}<span className="ml-auto rounded-full bg-[#eef8dc] px-3 py-1 text-[10px] font-extrabold text-[#357313]">VERIFIED</span></div><div className="flex gap-4 border-t border-[#eef0f2] pt-4"><img src={x.p.image} className="h-20 w-20 rounded-xl bg-[#f0f2f3] object-contain mix-blend-multiply"/><div className="flex-1"><div className="text-sm font-extrabold">{x.p.name}</div><div className="mt-2 text-xs text-[#69717d]">MOQ {x.p.moq} · {x.p.stock} available · <span className="font-mono">₹{unit(x.p,x.qty).toLocaleString('en-IN')} / unit</span></div><div className="mt-3 flex items-center justify-between"><div className="flex items-center rounded-full border border-[#e1e4e8]"><button onClick={()=>setQty(x.p.id,x.qty-1)} className="px-3 py-1">−</button><span className="px-2 font-mono text-sm">{x.qty}</span><button onClick={()=>setQty(x.p.id,x.qty+1)} className="px-3 py-1">+</button></div><div className="font-mono">₹{(unit(x.p,x.qty)*x.qty).toLocaleString('en-IN')}</div></div></div><button onClick={()=>remove(x.p.id)} className="self-start text-[#7a828f]"><X size={16}/></button></div></div>)}</div><aside className="h-fit rounded-3xl bg-[#0a0b0d] p-6 text-white"><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]">Order summary</div><div className="mt-6 space-y-4 text-sm"><div className="flex justify-between text-white/60"><span>Tiered subtotal</span><span className="font-mono text-white">₹{total.toLocaleString('en-IN')}</span></div><div className="flex justify-between text-white/60"><span>Estimated tax</span><span className="font-mono text-white">₹{tax.toLocaleString('en-IN')}</span></div><div className="flex justify-between border-t border-white/10 pt-4 text-base font-extrabold"><span>Estimated total</span><span className="font-mono text-[#ccff00]">₹{(total+tax).toLocaleString('en-IN')}</span></div></div><label className="mt-6 flex items-center gap-3 rounded-xl bg-white/5 p-3 text-xs"><input checked={taxExempt} onChange={e=>setTaxExempt(e.target.checked)} type="checkbox" className="accent-[#ccff00]"/> Tax-exempt purchase</label><PrimaryButton href="/checkout" className="mt-6 w-full">Continue to checkout <ArrowRight size={15}/></PrimaryButton><button onClick={()=>setDrawer(true)} className="mt-4 w-full rounded-full border border-white/20 px-4 py-3 text-xs font-extrabold uppercase tracking-widest text-white">Open cart drawer</button></aside></div>}</main><MobileBar/>{drawer&&<Drawer title="Cart quick view" onClose={()=>setDrawer(false)}><div className="space-y-4">{items.map(x=><div className="flex items-center gap-3" key={x.p.id}><img src={x.p.image} className="h-14 w-14 rounded-lg bg-[#f0f2f3] object-contain mix-blend-multiply"/><div className="flex-1"><div className="text-sm font-extrabold">{x.p.name}</div><div className="text-xs text-[#69717d]">{x.qty} units · ₹{(unit(x.p,x.qty)*x.qty).toLocaleString('en-IN')}</div></div></div>)}<PrimaryButton href="/checkout" className="mt-6 w-full">Checkout <ArrowRight size={15}/></PrimaryButton></div></Drawer>}</div>}
-function Checkout(){const [step,setStep]=usePersistentState<number>('flash-checkout-step',1); const [method,setMethod]=usePersistentState('flash-payment-method','Corporate card'); return <div className="min-h-screen"><Header/><main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 lg:px-8"><PageTitle eyebrow={`Checkout / Step ${step} of 3`} title="A faster way to close the loop."/><div className="mb-8 grid grid-cols-3 gap-2">{['Delivery hub','Payment terms','Confirmation'].map((x,i)=><div key={x}><div className={`h-1.5 rounded-full ${step>i?'bg-[#ccff00]':'bg-[#dfe3e6]'}`}/><div className="mt-2 text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">0{i+1} / {x}</div></div>)}</div><div className="rounded-3xl border border-[#e1e4e8] bg-white p-6 sm:p-9">{step===1&&<div><h2 className="text-xl font-extrabold">Where should we deliver?</h2><p className="mt-2 text-sm text-[#69717d]">Choose a saved delivery hub or add a new business location.</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><button className="rounded-2xl border-2 border-[#ccff00] bg-[#fbfff0] p-5 text-left"><div className="flex justify-between"><span className="font-extrabold">Mumbai HQ</span><Check size={18}/></div><div className="mt-2 text-sm text-[#69717d]">Unit 4B, Andheri East<br/>Mumbai, MH 400069</div></button><button onClick={()=>toast.success('Address form opened')} className="rounded-2xl border border-dashed border-[#cfd4d9] p-5 text-left"><Plus size={18}/><div className="mt-2 text-sm font-extrabold">Add delivery hub</div></button></div></div>}{step===2&&<div><h2 className="text-xl font-extrabold">How will your team pay?</h2><div className="mt-6 grid gap-3">{['Corporate card','Purchase order','Net-30 terms'].map(x=><button key={x} onClick={()=>setMethod(x)} className={`flex items-center justify-between rounded-2xl border p-5 text-left ${method===x?'border-[#ccff00] bg-[#fbfff0]':'border-[#e1e4e8]'}`}><span className="font-extrabold">{x}</span>{method===x&&<Check size={18}/>}</button>)}</div>{method==='Purchase order'&&<input placeholder="PO number" className="mt-4 w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm outline-none focus:border-[#ccff00]"/>}<div className="mt-5 rounded-2xl bg-[#f6f7f8] p-4 text-sm"><b>Spend approval routing</b><p className="mt-1 text-[#69717d]">Orders above ₹50,000 will be routed to your manager for approval before dispatch.</p></div></div>}{step===3&&<div className="py-8 text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#ccff00]"><Check size={30}/></div><h2 className="mt-5 text-2xl font-extrabold">Order placed in your workflow.</h2><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#69717d]">Flash order <span className="font-mono font-bold text-[#101217]">#FL-28491</span> is confirmed and your supplier has been notified. Track every step from your orders view.</p><div className="mx-auto mt-8 max-w-md rounded-2xl border border-[#e1e4e8] p-5 text-left"><div className="flex items-center justify-between text-xs"><span className="font-bold">Order progress</span><span className="text-[#16a34a]">Confirmed</span></div><div className="mt-5 flex items-center justify-between"><div className="grid h-8 w-8 place-items-center rounded-full bg-[#ccff00]"><Check size={15}/></div><div className="h-1 flex-1 bg-[#ccff00]"/><div className="grid h-8 w-8 place-items-center rounded-full bg-[#ccff00]"><Truck size={15}/></div><div className="h-1 flex-1 bg-[#e1e4e8]"/><div className="grid h-8 w-8 place-items-center rounded-full bg-[#f1f3f4]"><Package size={15}/></div></div><div className="mt-2 flex justify-between text-[10px] text-[#7a828f]"><span>Placed</span><span>Dispatching</span><span>Delivered</span></div></div><Link href="/buyer/orders" className="mt-7 inline-block text-xs font-extrabold uppercase tracking-widest underline">View order history</Link></div>}{step<3&&<div className="mt-9 flex justify-end"><PrimaryButton onClick={()=>setStep(step+1)}>Continue <ArrowRight size={15}/></PrimaryButton></div>}</div></main><MobileBar/></div>}
-function DashboardLayout({role,children}:{role:'seller'|'admin';children:any}){const seller=role==='seller'; const nav=seller?[['/seller/dashboard','Overview',LayoutDashboard],['/seller/listings','Listings',Package],['/seller/orders','Orders',ClipboardList],['/seller/rfq','RFQs',Quote],['/seller/payouts','Payouts',Wallet],['/seller/health','Account health',BarChart3]]:[['/admin/dashboard','Overview',LayoutDashboard],['/admin/sellers','Seller verification',Users],['/admin/moderation','Moderation',Settings2],['/admin/disputes','Disputes',CircleHelp]]; return <div className="min-h-screen bg-[#f6f7f8]"><aside className="fixed bottom-0 left-0 top-0 hidden w-64 flex-col border-r border-[#e1e4e8] bg-white p-5 md:flex"><FlashLogo/><div className="mt-10 text-[10px] font-extrabold uppercase tracking-[.2em] text-[#7a828f]">{seller?'Seller central':'Governance'}</div><nav className="mt-4 space-y-1">{nav.map(([href,label,I]:any)=><Link href={href} key={label} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-[#69717d] hover:bg-[#f0f2f3] hover:text-[#101217]"><I size={17}/>{label}</Link>)}</nav><div className="mt-auto rounded-2xl bg-[#0a0b0d] p-4 text-white"><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]">{seller?'Account health':'Platform pulse'}</div><div className="mt-2 text-2xl font-extrabold">{seller?'98':'99.2'}<span className="text-sm text-white/45"> / 100</span></div></div></aside><div className="md:pl-64"><header className="flex items-center justify-between border-b border-[#e1e4e8] bg-white px-4 py-4 sm:px-8"><div className="md:hidden"><FlashLogo/></div><div className="hidden text-sm font-extrabold md:block">{seller?'Northstar Components / Seller Central':'Flash Platform / Admin'}</div><div className="flex items-center gap-3"><button className="rounded-full border border-[#e1e4e8] p-2"><Bell size={16}/></button><div className="grid h-8 w-8 place-items-center rounded-full bg-[#ccff00] text-xs font-black">{seller?'NS':'AD'}</div></div></header><main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">{children}</main></div>{seller?<MobileBar role="seller"/>:<MobileBar role="seller"/>}</div>}
-function Metric({label,value,delta}:{label:string;value:string;delta:string}){return <div className="rounded-2xl border border-[#e1e4e8] bg-white p-5"><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">{label}</div><div className="mt-3 font-mono text-2xl font-medium">{value}</div><div className="mt-2 text-xs font-bold text-[#16a34a]">{delta}</div></div>}
-function SellerDashboard(){return <DashboardLayout role="seller"><PageTitle eyebrow="Seller central / Tuesday, 03 Sep" title="Good morning, Northstar." desc="Here is what needs your attention across 248 active SKUs."/><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Today's gross sales" value="₹2,84,920" delta="↑ 18.4% vs yesterday"/><Metric label="Pending shipments" value="26" delta="4 due within 6 hours"/><Metric label="Low-stock alerts" value="08" delta="2 critical"/><Metric label="Account health" value="98 / 100" delta="Good standing"/></div><div className="mt-7 grid gap-6 lg:grid-cols-[1.3fr_.7fr]"><div className="rounded-2xl bg-[#0a0b0d] p-6 text-white"><div className="flex items-start justify-between"><div><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]">Urgent action</div><h2 className="mt-2 text-xl font-extrabold">4 orders require dispatch.</h2><p className="mt-2 text-sm text-white/55">Confirm tracking before 18:00 to protect your dispatch rate.</p></div><Truck className="text-[#ccff00]"/></div><PrimaryButton href="/seller/orders" className="mt-7 bg-[#ccff00] text-black">Open fulfillment queue <ArrowRight size={15}/></PrimaryButton></div><div className="rounded-2xl border border-[#e1e4e8] bg-white p-6"><div className="flex justify-between"><div><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">Sales volume</div><div className="mt-2 font-mono text-2xl">₹12.8L</div></div><BarChart3 className="text-[#ccff00]"/></div><div className="mt-7 flex h-20 items-end gap-2">{[35,48,38,65,55,78,68,92,76,100,84,96].map((h,i)=><div key={i} className="flex-1 rounded-t-md bg-[#ccff00]" style={{height:`${h}%`}}/>)}</div><div className="mt-2 flex justify-between text-[10px] text-[#7a828f]"><span>25 Aug</span><span>03 Sep</span></div></div></div><div className="mt-7 rounded-2xl border border-[#e1e4e8] bg-white p-6"><div className="flex justify-between"><h2 className="text-lg font-extrabold">Recent orders</h2><Link href="/seller/orders" className="text-xs font-extrabold uppercase tracking-widest underline">View all</Link></div><OrderTable/></div></DashboardLayout>}
-function OrderTable(){return <div className="mt-5 overflow-hidden rounded-xl border border-[#eef0f2]"><div className="hidden grid-cols-[1fr_1.2fr_1fr_1fr] bg-[#f6f7f8] px-4 py-3 text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f] sm:grid"><span>Order</span><span>Buyer</span><span>Status</span><span>Total</span></div>{[['FL-28491','Vertex Labs','Awaiting dispatch','₹48,200'],['FL-28478','Aster Retail','Shipped','₹1,24,500'],['FL-28462','Kite Systems','Delivered','₹18,900']].map(r=><div className="grid gap-2 border-t border-[#eef0f2] px-4 py-4 text-sm sm:grid-cols-[1fr_1.2fr_1fr_1fr] sm:items-center" key={r[0]}><span className="font-mono font-bold">{r[0]}</span><span>{r[1]}</span><span><span className={`rounded-full px-2 py-1 text-[10px] font-extrabold ${r[2]==='Awaiting dispatch'?'bg-[#fff3d6] text-[#a56300]':r[2]==='Shipped'?'bg-[#e8f0ff] text-[#2563eb]':'bg-[#eef8dc] text-[#357313]'}`}>{r[2]}</span></span><span className="font-mono">{r[3]}</span></div>)}</div>}
-function SellerListings(){const [items,setItems]=usePersistentState<any[]>('flash-listings',products.slice(0,4).map((p,i)=>({...p,status:i===3?'Draft':'Active'}))); const [wizard,setWizard]=useState(false); const [tab,setTab]=useState(0); const tabs=['Basic info','Media','Pricing','Inventory','Shipping']; return <DashboardLayout role="seller"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageTitle eyebrow="Seller central / Catalog" title="Your listings." desc="Keep your assortment sharp, available, and priced to win."/><PrimaryButton onClick={()=>setWizard(true)}><Plus size={15}/> New listing</PrimaryButton></div><div className="mb-4 flex flex-wrap gap-2"><button onClick={()=>{setItems(items.map(item=>({...item,price:Math.round(item.price*.95)})));toast.success('Bulk price update applied')}} className="rounded-full bg-[#0a0b0d] px-4 py-2 text-xs font-extrabold text-[#ccff00]">Bulk price change</button><button onClick={()=>{setItems(items.slice(0,1));toast.success('Selected drafts removed')}} className="rounded-full bg-white px-4 py-2 text-xs font-bold">Bulk delete</button><button className="rounded-full bg-white px-4 py-2 text-xs font-bold">All 248</button><button className="rounded-full bg-white px-4 py-2 text-xs font-bold">Active 236</button><button className="rounded-full bg-white px-4 py-2 text-xs font-bold">Draft 8</button></div><div className="overflow-hidden rounded-2xl border border-[#e1e4e8] bg-white"><div className="hidden grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 bg-[#f6f7f8] px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f] md:grid"><span>Product</span><span>SKU</span><span>Stock</span><span>Price</span><span>Status</span></div>{items.map(p=><div className="grid gap-3 border-t border-[#eef0f2] px-5 py-4 md:grid-cols-[2fr_1fr_1fr_1fr_1fr] md:items-center" key={p.id}><div className="flex items-center gap-3"><img src={p.image} className="h-12 w-12 rounded-lg bg-[#f0f2f3] object-contain mix-blend-multiply"/><div><div className="text-sm font-extrabold">{p.name}</div><div className="text-[10px] text-[#7a828f]">{p.category}</div></div></div><span className="font-mono text-xs">NS-{p.id.toUpperCase()}24</span><span className="font-mono text-sm">{p.stock}</span><span className="font-mono text-sm">₹{p.price.toLocaleString('en-IN')}</span><span className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-extrabold ${p.status==='Draft'?'bg-[#fff3d6] text-[#a56300]':'bg-[#eef8dc] text-[#357313]'}`}>{p.status}</span></div>)}</div>{wizard&&<Drawer title="Create listing" onClose={()=>setWizard(false)}><div className="flex gap-1 overflow-x-auto">{tabs.map((x,i)=><button onClick={()=>setTab(i)} className={`whitespace-nowrap rounded-full px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest ${tab===i?'bg-[#ccff00]':'bg-[#f0f2f3]'}`} key={x}>{x}</button>)}</div><div className="mt-8 space-y-4">{tab===0&&['Product title','Brand','Category','B2B description'].map(x=><input key={x} placeholder={x} className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm outline-none focus:border-[#ccff00]"/>)}{tab===1&&<div className="rounded-2xl border-2 border-dashed border-[#cfd4d9] p-10 text-center"><Upload className="mx-auto text-[#7a828f]"/><div className="mt-3 text-sm font-extrabold">Drag product media here</div><div className="mt-1 text-xs text-[#69717d]">Or choose files from your device</div></div>}{tab===2&&<><div className="text-sm font-extrabold">Tiered pricing rows</div>{['1+ units · ₹0','10+ units · ₹0','50+ units · ₹0'].map(x=><input key={x} placeholder={x} className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/>)}</>}{tab===3&&['SKU','Stock units','Low-stock threshold'].map(x=><input key={x} placeholder={x} className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/>)}{tab===4&&['Handling time','Weight','HSN / Tax code','Spec sheet URL'].map(x=><input key={x} placeholder={x} className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/>)}</div><div className="mt-8 flex justify-between"><button onClick={()=>setTab(Math.max(0,tab-1))} className="rounded-full border border-[#e1e4e8] px-4 py-2 text-xs font-extrabold uppercase tracking-widest">Back</button><button onClick={()=>tab<4?setTab(tab+1):(setWizard(false),toast.success('Listing saved as draft'))} className="rounded-full bg-[#0a0b0d] px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-[#ccff00]">{tab<4?'Next':'Save draft'}</button></div></Drawer>}</DashboardLayout>}
-function AdminPage({kind}:{kind:string}){const title=kind==='sellers'?'Seller verification queue':kind==='moderation'?'Catalog moderation':kind==='dashboard'?'Platform overview':'Dispute arbitration'; const rows=kind==='sellers'?[['SV-442','Common Thread Co.','KYB documents','Review'],['SV-439','Forge & Field','Bank proof','Review'],['SV-435','Form Office Supply','Approved','Approved']]:kind==='moderation'?[['SKU-8821','Wireless inventory scanner','Price reasonability','Flagged'],['SKU-7712','Industrial barrier','Compliance doc','Review'],['SKU-6584','Ergonomic chair','Approved','Approved']]:[['DSP-091','Vertex Labs × Northstar','Short shipment','Open'],['DSP-087','Aster Retail × Packsmith','Damaged goods','Seller response'],['DSP-082','Kite Systems × Forge','Resolved','Resolved']]; return <DashboardLayout role="admin"><PageTitle eyebrow={`Admin governance / ${kind}`} title={title} desc="Make high-context decisions with a clear audit trail for every marketplace participant."/><div className="grid gap-4 sm:grid-cols-3"><Metric label="Open cases" value={kind==='sellers'?'24':kind==='moderation'?'18':'07'} delta="↓ 12% this week"/><Metric label="Median review time" value="2h 14m" delta="Within SLA"/><Metric label="Resolved today" value="16" delta="↑ 22% vs avg"/></div><div className="mt-7 rounded-2xl border border-[#e1e4e8] bg-white p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-extrabold">Queue</h2><button className="rounded-full border border-[#e1e4e8] p-2"><MoreHorizontal size={16}/></button></div><div className="mt-4 overflow-hidden rounded-xl border border-[#eef0f2]"><div className="hidden grid-cols-[1fr_1.8fr_1.3fr_1fr] bg-[#f6f7f8] px-4 py-3 text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f] sm:grid"><span>Reference</span><span>Parties / item</span><span>Context</span><span>Action</span></div>{rows.map(r=><div className="grid gap-2 border-t border-[#eef0f2] px-4 py-4 text-sm sm:grid-cols-[1fr_1.8fr_1.3fr_1fr] sm:items-center" key={r[0]}><span className="font-mono font-bold">{r[0]}</span><span className="font-semibold">{r[1]}</span><span className="text-[#69717d]">{r[2]}</span><div className="flex flex-wrap gap-2">{r[3]==='Open'||r[3]==='Review'||r[3]==='Flagged'?<><button onClick={()=>{localStorage.setItem(`flash-decision-${r[0]}`,'approved');toast.success(`${r[0]} approved`)}} className="rounded-full bg-[#ccff00] px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest">{kind==='disputes'?'Release funds':'Approve'}</button><button onClick={()=>{localStorage.setItem(`flash-decision-${r[0]}`,'rejected');toast.success(`${r[0]} rejected with compliance note`)}} className="rounded-full bg-[#0a0b0d] px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]">{kind==='disputes'?'Refund buyer':kind==='moderation'?'Suppress':'Reject'}</button></>:<span className="rounded-full bg-[#eef8dc] px-3 py-2 text-[10px] font-extrabold text-[#357313]">{r[3]}</span>}</div></div>)}</div></div></DashboardLayout>}
-function Quotes(){const [quotes,setQuotes]=usePersistentState<any[]>('flash-quotes',[['RFQ-284','Northstar Components','65W GaN Adapter','250 units','₹1,180 / unit','Counter offer received'],['RFQ-279','Packsmith Industries','Kraft shipping cartons','2,000 units','₹36 / unit','Awaiting your reply'],['RFQ-271','Forge & Field','Safety barrier','20 units','₹3,560 / unit','Accepted']]); const [newRfq,setNewRfq]=useState(false); const [sent,setSent]=useState<string|null>(null); return <div className="min-h-screen"><Header/><main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 lg:px-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageTitle eyebrow="Buyer workspace / RFQs" title="Your quote inbox." desc="Negotiate directly with verified suppliers and turn better terms into a better margin."/><PrimaryButton onClick={()=>setNewRfq(true)}><Plus size={15}/> New RFQ</PrimaryButton></div><div className="grid gap-4">{quotes.map((q,i)=><div className="rounded-2xl border border-[#e1e4e8] bg-white p-5" key={q[0]}><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">{q[0]} · {q[1]}</div><h2 className="mt-2 text-lg font-extrabold">{q[2]}</h2><div className="mt-2 text-sm text-[#69717d]">{q[3]} · <span className="font-mono font-bold text-[#101217]">{q[4]}</span></div></div><div className="flex items-center gap-3"><span className={`rounded-full px-3 py-2 text-[10px] font-extrabold ${i===2?'bg-[#eef8dc] text-[#357313]':'bg-[#fff3d6] text-[#a56300]'}`}>{sent===q[0]?'Response sent':q[5]}</span>{i<2&&<button onClick={()=>{setSent(q[0]);setQuotes(current=>current.map(item=>item[0]===q[0]?[...item.slice(0,5),'Counter-offer sent']:item));toast.success('Counter-offer sent to seller')}} className="rounded-full bg-[#ccff00] px-4 py-2 text-[10px] font-extrabold uppercase tracking-widest">{sent===q[0]?'Sent':'Respond'}</button>}</div></div></div>)}</div></main><MobileBar/>{newRfq&&<Drawer title="Start a new RFQ" onClose={()=>setNewRfq(false)}><div className="space-y-4"><input placeholder="Product or SKU" className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/><input placeholder="Target quantity" className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/><input placeholder="Target unit price" className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/><textarea placeholder="Delivery timeline and requirements" className="min-h-28 w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/><PrimaryButton onClick={()=>{setQuotes(current=>[['RFQ-'+Date.now(),'New supplier','Custom sourcing request','Quantity pending','Target price pending','Draft'],...current]);setNewRfq(false);toast.success('RFQ draft saved to quote inbox')}} className="w-full">Send RFQ <ArrowRight size={15}/></PrimaryButton></div></Drawer>}</div>}
-function Auth({signup=false}:{signup?:boolean}){
-  const [role,setRole]=useState<'buyer'|'seller'>('buyer'); const [,navigate]=useLocation();
-  const demoLogin=(target:'buyer'|'seller'|'admin')=>{localStorage.setItem('flash-role',target); navigate(target==='buyer'?'/shop':target==='seller'?'/seller/dashboard':'/admin/dashboard'); toast.success(`${target[0].toUpperCase()+target.slice(1)} workspace loaded`)};
-  return <div className="flash-dark-grid flex min-h-screen items-center justify-center p-4"><div className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl"><div className="grid md:grid-cols-[.8fr_1.2fr]"><div className="hidden bg-[#0a0b0d] p-10 text-white md:block"><FlashLogo/><div className="mt-28"><div className="text-[10px] font-extrabold uppercase tracking-[.2em] text-[#ccff00]">Business, accelerated</div><h1 className="mt-4 text-4xl font-extrabold tracking-tight">One account.<br/>Every advantage.</h1><p className="mt-5 text-sm leading-7 text-white/55">Join the operating system for modern business buying and selling.</p></div></div><div className="p-7 sm:p-12"><div className="flex justify-between"><FlashLogo/><Link href="/" className="text-xs font-bold text-[#69717d]">Back to home</Link></div><div className="mx-auto mt-14 max-w-md"><div className="text-[10px] font-extrabold uppercase tracking-[.2em] text-[#7a828f]">{signup?'Create your account':'Welcome back'}</div><h2 className="mt-3 text-3xl font-extrabold tracking-tight">{signup?'Choose your path.':'Sign in to Flash.'}</h2>{signup ? <><p className="mt-3 text-sm text-[#69717d]">Start with the workspace that matches your role.</p><div className="mt-7 grid gap-3"><button onClick={()=>setRole('seller')} className={`rounded-2xl border p-5 text-left ${role==='seller'?'border-[#ccff00] bg-[#fbfff0]':'border-[#e1e4e8]'}`}><Store size={20}/><div className="mt-3 font-extrabold">Sell on Flash Business</div><div className="mt-1 text-xs text-[#69717d]">Reach verified business buyers.</div></button><button onClick={()=>setRole('buyer')} className={`rounded-2xl border p-5 text-left ${role==='buyer'?'border-[#ccff00] bg-[#fbfff0]':'border-[#e1e4e8]'}`}><ShoppingCart size={20}/><div className="mt-3 font-extrabold">Register as corporate buyer</div><div className="mt-1 text-xs text-[#69717d]">Unlock wholesale pricing and terms.</div></button></div><PrimaryButton href={role==='seller'?'/auth/seller-onboarding':'/shop'} className="mt-6 w-full">Continue as {role} <ArrowRight size={15}/></PrimaryButton></> : <><div className="mt-7 space-y-3"><input placeholder="Work email" className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3.5 text-sm outline-none focus:border-[#ccff00]"/><input placeholder="Password" type="password" className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3.5 text-sm outline-none focus:border-[#ccff00]"/><PrimaryButton onClick={()=>demoLogin(role)} className="w-full">Sign in as {role} <ArrowRight size={15}/></PrimaryButton></div><div className="mt-7 grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-[#7a828f]"><button onClick={()=>{setRole('buyer');demoLogin('buyer')}} className="rounded-xl bg-[#f6f7f8] p-3">Buyer demo</button><button onClick={()=>demoLogin('seller')} className="rounded-xl bg-[#f6f7f8] p-3">Seller demo</button><button onClick={()=>demoLogin('admin')} className="rounded-xl bg-[#f6f7f8] p-3">Admin demo</button></div><p className="mt-8 text-center text-xs text-[#69717d]">New to Flash? <Link href="/auth/signup" className="font-extrabold text-[#101217] underline">Create an account</Link></p></>}</div></div></div></div></div>
+
+function useCart() {
+  const [cart, setCart] = usePersistentState<CartItem[]>('flash-cart', []);
+  return {
+    cart,
+    add: (id: string, qty = 1) =>
+      setCart((c) => {
+        const hit = c.find((x) => x.productId === id);
+        return hit
+          ? c.map((x) => (x.productId === id ? { ...x, qty: x.qty + qty } : x))
+          : [...c, { productId: id, qty }];
+      }),
+    setQty: (id: string, qty: number) =>
+      setCart((c) =>
+        c.map((x) => (x.productId === id ? { ...x, qty: Math.max(1, qty) } : x))
+      ),
+    remove: (id: string) => setCart((c) => c.filter((x) => x.productId !== id)),
+    clear: () => setCart([])
+  };
 }
-function Onboarding(){
-  const [step,setStep]=usePersistentState<number>('flash-onboarding-step',1); const [docUploaded,setDocUploaded]=usePersistentState<any[]>('flash-onboarding-docs',[]); const upload=trpc.files.uploadReference.useMutation();
-  const acceptFile=async (file:File)=>{const reader=new FileReader(); reader.onload=async()=>{try{const base64=String(reader.result).split(',')[1]||''; const result=await upload.mutateAsync({filename:file.name,contentType:file.type||'application/octet-stream',contentBase64:base64,scope:'onboarding'}); setDocUploaded(d=>[...d,result]); toast.success(`${file.name} securely uploaded`)}catch{toast.error('Upload requires a signed-in seller session')}}; reader.readAsDataURL(file)};
-  const fields = step===1 ? ['Company name','Legal entity','GSTIN / Tax ID','Corporate email'] : step===3 ? ['Bank name','Account number','IFSC / routing code'] : ['Brand display name','Primary categories','Warehouse locations'];
-  return <div className="min-h-screen bg-[#f6f7f8]"><header className="border-b border-[#e1e4e8] bg-white px-4 py-4"><div className="mx-auto max-w-5xl"><FlashLogo/></div></header><main className="mx-auto max-w-3xl px-4 py-10 pb-24 sm:px-6"><PageTitle eyebrow={`Seller onboarding / Step ${step} of 5`} title={step===5?'Application submitted.':'Build your seller profile.'} desc={step===5?'Your application is now with our verification team. We will email you once your storefront is ready.':'A short, guided setup to get your business ready for verified buyers.'}/><div className="mb-8 flex gap-2">{[1,2,3,4,5].map(x=><div key={x} className={`h-1.5 flex-1 rounded-full ${x<=step?'bg-[#ccff00]':'bg-[#dfe3e6]'}`}/>)}</div><div className="rounded-3xl border border-[#e1e4e8] bg-white p-6 sm:p-9">{step===5?<div className="py-12 text-center"><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#ccff00]"><Check size={30}/></div><h2 className="mt-5 text-2xl font-extrabold">Verification pending</h2><p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#69717d]">Your documents are securely retained and queued for KYB review. Typical review time is under 24 hours.</p><Link href="/seller/dashboard" className="mt-7 inline-block text-xs font-extrabold uppercase tracking-widest underline">Go to seller preview</Link></div>:<><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#7a828f]">Step 0{step}</div><h2 className="mt-2 text-2xl font-extrabold">{['Business profile','KYB / KYC verification','Payout details','Storefront setup'][step-1]}</h2><div className="mt-7 grid gap-4">{step===2?<><div className="rounded-2xl border-2 border-dashed border-[#cfd4d9] p-8 text-center"><Upload className="mx-auto text-[#7a828f]"/><div className="mt-3 text-sm font-extrabold">Upload business license</div><div className="mt-1 text-xs text-[#69717d]">PDF, JPG or PNG · Max 10MB</div><label className="mt-5 inline-flex cursor-pointer rounded-full bg-[#0a0b0d] px-4 py-2 text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]"><input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>e.target.files?.[0]&&acceptFile(e.target.files[0])}/>{docUploaded.some((x:any)=>x.filename==='business-license.pdf')?'Uploaded':'Choose file'}</label></div><div className="rounded-2xl border-2 border-dashed border-[#cfd4d9] p-8 text-center"><FileText className="mx-auto text-[#7a828f]"/><div className="mt-3 text-sm font-extrabold">Upload bank proof</div><div className="mt-1 text-xs text-[#69717d]">Secure reference stored with your application</div></div></> : fields.map(x=><input key={x} placeholder={x} className="rounded-xl border border-[#e1e4e8] px-4 py-3.5 text-sm outline-none focus:border-[#ccff00]"/>)}</div><div className="mt-9 flex justify-between"><button disabled={step===1} onClick={()=>setStep(step-1)} className="rounded-full border border-[#e1e4e8] px-5 py-3 text-xs font-extrabold uppercase tracking-widest disabled:opacity-30">Back</button><PrimaryButton onClick={()=>setStep(step+1)}>{step===4?'Submit application':'Continue'} <ArrowRight size={15}/></PrimaryButton></div></>}</div></main></div>
+
+// Global Catalog Context for 100% Live Supabase Binding
+const CatalogContext = createContext<{
+  products: SupabaseProduct[];
+  isLoading: boolean;
+  refresh: () => void;
+}>({
+  products: [],
+  isLoading: true,
+  refresh: () => {}
+});
+
+function FlashLogo() {
+  return (
+    <Link href="/">
+      <div className="flex items-center gap-2 font-extrabold tracking-tight">
+        <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)]">
+          <Zap size={18} fill="currentColor" />
+        </span>
+        <span className="text-lg text-white font-black">
+          flash<span className="text-neutral-500">.biz</span>
+        </span>
+      </div>
+    </Link>
+  );
 }
-function Orders(){return <div className="min-h-screen"><Header/><main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 lg:px-8"><PageTitle eyebrow="Buyer workspace / Orders" title="Your orders, in motion." desc="Track fulfillment, download invoices, and keep every supplier relationship in one place."/><div className="space-y-4">{[['FL-28491','Northstar Components','₹48,200','Awaiting dispatch','4 Sep 2026'],['FL-28478','Packsmith Industries','₹1,24,500','Shipped','6 Sep 2026'],['FL-28462','Forge & Field','₹18,900','Delivered','28 Aug 2026']].map(r=><div className="rounded-2xl border border-[#e1e4e8] bg-white p-5" key={r[0]}><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><div className="font-mono text-xs font-bold">{r[0]}</div><div className="mt-2 text-sm font-extrabold">{r[1]}</div><div className="mt-1 text-xs text-[#69717d]">Estimated delivery {r[4]}</div></div><div className="flex items-center gap-4"><div className="font-mono">{r[2]}</div><span className="rounded-full bg-[#eef8dc] px-3 py-2 text-[10px] font-extrabold text-[#357313]">{r[3]}</span><button onClick={()=>toast.success('Invoice download prepared')}><Download size={16}/></button>{r[3]==='Delivered'&&<button onClick={()=>toast.success('Return request started')} className="text-[10px] font-extrabold uppercase tracking-widest underline">Return</button>}</div></div></div>)}</div></main><MobileBar/></div>}
-function SellerOrders(){const [dispatch,setDispatch]=useState(false); return <DashboardLayout role="seller"><PageTitle eyebrow="Seller central / Fulfillment" title="Fulfillment queue." desc="Keep buyers informed and protect your dispatch rate."/><div className="mb-5 rounded-2xl bg-[#0a0b0d] p-5 text-white"><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#ccff00]">Urgent action</div><div className="mt-2 text-lg font-extrabold">4 orders require dispatch within 6 hours.</div><button onClick={()=>setDispatch(true)} className="mt-4 rounded-full bg-[#ccff00] px-4 py-2 text-[10px] font-extrabold uppercase tracking-widest text-black">Dispatch next order</button></div><div className="rounded-2xl border border-[#e1e4e8] bg-white p-6"><OrderTable/></div>{dispatch&&<Drawer title="Dispatch order FL-28491" onClose={()=>setDispatch(false)}><div className="space-y-4"><div className="rounded-xl bg-[#f6f7f8] p-4 text-sm"><div className="font-extrabold">Vertex Labs</div><div className="mt-1 text-[#69717d]">12 × AeroCharge Pro 65W GaN Adapter</div></div><input placeholder="Tracking ID" className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"/><select className="w-full rounded-xl border border-[#e1e4e8] px-4 py-3 text-sm"><option>Delhivery</option><option>Blue Dart</option><option>DHL Express</option></select><button onClick={()=>toast.success('Packing slip generated')} className="flex w-full items-center justify-center gap-2 rounded-full border border-[#0a0b0d] px-4 py-3 text-xs font-extrabold uppercase tracking-widest"><Download size={14}/> Print packing slip</button><PrimaryButton onClick={()=>{setDispatch(false);toast.success('Order marked as shipped')}} className="w-full">Confirm dispatch <Truck size={15}/></PrimaryButton></div></Drawer>}</DashboardLayout>}
-function AppRouter(){const [location]=useLocation(); if(location==='/')return <Home/>; if(location==='/shop')return <Shop/>; if(location.startsWith('/product/'))return <ProductPage id={location.split('/')[2]}/>; if(location==='/cart')return <Cart/>; if(location==='/checkout')return <Checkout/>; if(location==='/buyer/quotes')return <Quotes/>; if(location==='/buyer/orders')return <Orders/>; if(location==='/auth/login')return <Auth/>; if(location==='/auth/signup')return <Auth signup/>; if(location==='/auth/seller-onboarding')return <Onboarding/>; if(location.startsWith('/seller'))return <SellerDashboardView/>; if(location==='/admin/dashboard')return <AdminPage kind="dashboard"/>; if(location==='/admin/sellers')return <AdminPage kind="sellers"/>; if(location==='/admin/moderation')return <AdminPage kind="moderation"/>; if(location==='/admin/disputes')return <AdminPage kind="disputes"/>; return <Home/>}
+
+function PrimaryButton({
+  children,
+  onClick,
+  href,
+  className = '',
+  disabled = false
+}: {
+  children: any;
+  onClick?: () => void;
+  href?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const body = (
+    <motion.button
+      whileHover={disabled ? undefined : { scale: 1.02 }}
+      whileTap={disabled ? undefined : { scale: 0.98 }}
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#CCFF00] px-5 py-3 text-xs font-black uppercase tracking-wider text-black shadow-[0_0_18px_rgba(204,255,0,0.25)] transition ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+    >
+      {children}
+    </motion.button>
+  );
+  return href && !disabled ? <Link href={href}>{body}</Link> : body;
+}
+
+function Header({
+  cartCount = 0,
+  dark = true
+}: {
+  cartCount?: number;
+  dark?: boolean;
+}) {
+  const [menu, setMenu] = useState(false);
+  return (
+    <header className="sticky top-0 z-30 border-b border-neutral-800/80 bg-[#000000]/90 text-white backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-3.5 sm:px-6 lg:px-8">
+        <FlashLogo />
+        <nav className="hidden items-center gap-7 text-xs font-extrabold uppercase tracking-wider text-neutral-300 md:flex">
+          <Link href="/shop" className="hover:text-[#CCFF00] transition">
+            Marketplace
+          </Link>
+          <Link href="/buyer/quotes" className="hover:text-[#CCFF00] transition">
+            Quotes
+          </Link>
+          <Link href="/seller/dashboard" className="text-[#CCFF00] hover:underline">
+            Seller Central
+          </Link>
+        </nav>
+        <div className="hidden items-center gap-3 md:flex">
+          <Link
+            href="/auth/login"
+            className="text-xs font-black uppercase tracking-widest text-neutral-300 hover:text-white"
+          >
+            Sign in
+          </Link>
+          <PrimaryButton href="/shop" className="px-4 py-2.5">
+            Shop now <ArrowRight size={14} />
+          </PrimaryButton>
+          <Link
+            href="/cart"
+            className="relative rounded-full border border-neutral-800 bg-[#0D1117] p-2.5 text-neutral-300 hover:border-neutral-700 hover:text-white transition"
+          >
+            <ShoppingCart size={17} />
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#CCFF00] px-1 text-[10px] font-black text-black">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+        </div>
+        <button
+          className="rounded-lg p-2 md:hidden text-neutral-300"
+          onClick={() => setMenu(!menu)}
+        >
+          {menu ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </div>
+      {menu && (
+        <div className="border-t border-neutral-800 bg-[#0D1117] px-4 py-4 md:hidden">
+          <div className="grid gap-3 text-xs font-black uppercase tracking-wider">
+            <Link href="/shop" className="text-white hover:text-[#CCFF00]">
+              Marketplace
+            </Link>
+            <Link href="/buyer/quotes" className="text-white hover:text-[#CCFF00]">
+              Quotes
+            </Link>
+            <Link href="/seller/dashboard" className="text-[#CCFF00]">
+              Seller Central
+            </Link>
+            <Link href="/auth/login" className="text-neutral-400">
+              Sign in
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+function MobileBar({ role = 'buyer' }: { role?: 'buyer' | 'seller' }) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-neutral-800 bg-[#000000]/95 text-white backdrop-blur md:hidden">
+      {(role === 'buyer'
+        ? [
+            ['/', 'Home', LayoutDashboard],
+            ['/shop', 'Search', Search],
+            ['/cart', 'Cart', ShoppingCart],
+            ['/buyer/quotes', 'Quotes', Quote],
+            ['/auth/login', 'Account', Users]
+          ]
+        : [
+            ['/seller/dashboard', 'Home', LayoutDashboard],
+            ['/seller/dashboard', 'Inventory', Package],
+            ['/seller/orders', 'Orders', ClipboardList],
+            ['/seller/rfq', 'Quotes', Quote],
+            ['/seller/health', 'Profile', Users]
+          ]
+      ).map(([href, label, I]: any) => (
+        <Link
+          href={href as string}
+          key={label as string}
+          className="flex flex-col items-center gap-1 text-[10px] font-bold text-white/60 hover:text-[#CCFF00]"
+        >
+          <I size={17} />
+          <span>{label}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function PageTitle({
+  eyebrow,
+  title,
+  desc
+}: {
+  eyebrow: string;
+  title: string;
+  desc?: string;
+}) {
+  return (
+    <div className="mb-8">
+      <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+        {eyebrow}
+      </div>
+      <h1 className="max-w-3xl text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+        {title}
+      </h1>
+      {desc && (
+        <p className="mt-2.5 max-w-2xl text-xs sm:text-sm font-medium text-neutral-400">
+          {desc}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Home() {
+  const { cart } = useCart();
+  const { products, isLoading } = useContext(CatalogContext);
+
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header cartCount={cart.reduce((a, b) => a + b.qty, 0)} />
+      <main>
+        {/* Hero Section with Refined Font Scale */}
+        <section className="flash-dark-grid overflow-hidden border-b border-neutral-800/80">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:py-20">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#CCFF00]/30 bg-[#CCFF00]/10 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+                <Sparkles size={13} /> The operating system for business buying
+              </div>
+              <h1 className="max-w-3xl text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight text-white">
+                Buy better.<br />
+                <span className="text-[#CCFF00]">Move faster.</span>
+              </h1>
+              <p className="mt-5 max-w-xl text-xs sm:text-sm font-medium leading-relaxed text-neutral-400">
+                The B2B marketplace built for high-velocity commerce. Verified supplier catalog,
+                wholesale volume pricing tiers, and real-time database sync.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <PrimaryButton href="/shop">
+                  Explore Marketplace <ArrowRight size={15} />
+                </PrimaryButton>
+                <Link
+                  href="/seller/dashboard"
+                  className="inline-flex items-center rounded-full border border-neutral-800 bg-[#0D1117] px-5 py-3 text-xs font-black uppercase tracking-wider text-neutral-300 hover:border-neutral-700 hover:text-white transition"
+                >
+                  Seller Dashboard
+                </Link>
+              </div>
+              <div className="mt-12 grid max-w-xl grid-cols-3 gap-5 border-t border-neutral-800 pt-6">
+                <div>
+                  <div className="font-mono text-xl font-semibold text-[#CCFF00] tabular-nums">
+                    {products.length} Live
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
+                    Supabase SKUs
+                  </div>
+                </div>
+                <div>
+                  <div className="font-mono text-xl font-semibold text-[#CCFF00] tabular-nums">
+                    18.4%
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
+                    Avg Wholesale Save
+                  </div>
+                </div>
+                <div>
+                  <div className="font-mono text-xl font-semibold text-[#CCFF00] tabular-nums">
+                    &lt; 1h
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-widest text-neutral-500 font-bold">
+                    Dispatch SLA
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative min-h-[360px] overflow-hidden rounded-3xl border border-neutral-800/80 bg-[#0D1117]">
+              <img
+                src={heroImage}
+                className="absolute inset-0 h-full w-full object-cover opacity-45"
+                alt="Commerce background"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-transparent" />
+              <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-neutral-800 bg-[#0D1117]/90 p-4 backdrop-blur-md">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+                      Real-time Sync
+                    </div>
+                    <div className="mt-1 text-xs sm:text-sm font-bold text-white">
+                      Live Catalog bound to deldhtqoygpoozbrfpgv
+                    </div>
+                  </div>
+                  <Truck className="text-[#CCFF00]" size={20} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Categories Rail with scrollbar-none */}
+        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                Browse by Category
+              </div>
+              <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-white">
+                Find your wholesale advantage.
+              </h2>
+            </div>
+            <Link
+              href="/shop"
+              className="hidden text-xs font-black uppercase tracking-widest text-[#CCFF00] hover:underline md:block"
+            >
+              View all products →
+            </Link>
+          </div>
+          <div className="mt-6 flex gap-3 overflow-x-auto scrollbar-none pb-2 sm:grid sm:grid-cols-5">
+            {categories.map(([name, num, bg]) => (
+              <Link
+                href={`/shop?category=${name}`}
+                key={name}
+                className={`group ${bg} min-w-[150px] rounded-2xl p-4 transition hover:-translate-y-1 hover:border-[#CCFF00]/40`}
+              >
+                <div className="flex justify-between text-xs font-bold text-neutral-400">
+                  <span>0{num}</span>
+                  <ArrowRight size={14} className="opacity-40 transition group-hover:translate-x-1" />
+                </div>
+                <div className="mt-12 text-sm font-bold text-white">{name}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Live Flash Picks from Supabase (Zero mock data) */}
+        <section className="border-t border-neutral-800/80 bg-[#07090D] py-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+                  Live Picks • Supabase Database
+                </div>
+                <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-white">
+                  Wholesale catalog items, ready to ship.
+                </h2>
+              </div>
+              <PrimaryButton href="/shop">
+                Shop all catalog <ArrowRight size={15} />
+              </PrimaryButton>
+            </div>
+
+            {isLoading ? (
+              <div className="mt-8 flex min-h-[260px] items-center justify-center rounded-2xl border border-neutral-800 bg-[#0D1117]">
+                <div className="flex items-center gap-2 text-xs font-bold text-neutral-400">
+                  <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
+                  Connecting to live Supabase catalog...
+                </div>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="mt-8 flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 bg-[#0D1117] p-8 text-center">
+                <Package className="h-10 w-10 text-neutral-600 mb-2" />
+                <div className="text-base font-bold text-white">Catalog currently empty</div>
+                <p className="mt-1 text-xs text-neutral-400 max-w-sm">
+                  No live products in Supabase table <code className="text-[#CCFF00]">products</code> yet. Use the Seller Hub to publish items.
+                </p>
+                <Link
+                  href="/seller/dashboard"
+                  className="mt-4 rounded-full bg-[#CCFF00] px-5 py-2 text-xs font-black uppercase text-black"
+                >
+                  Open Seller Hub
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {products.slice(0, 4).map((p) => (
+                  <ProductCard p={p} key={p.id || p.name} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function ProductCard({ p }: { p: any }) {
+  const { add } = useCart();
+  const price = Number(p.price) || 0;
+  const oldPrice = Number(p.original_price || p.old) || price;
+  const image = p.primary_image || p.image || '';
+  const seller = p.brand || p.seller || 'Flash Verified';
+  const moq = p.moq || 1;
+  const stock = p.stock ?? 0;
+  const badge =
+    p.discount && p.discount !== '-0%'
+      ? p.discount
+      : p.badge || (stock > 0 ? 'IN STOCK' : 'PRE-ORDER');
+
+  return (
+    <div className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-800/80 bg-[#0D1117] transition hover:-translate-y-1 hover:border-[#CCFF00]/40 hover:shadow-xl">
+      <Link href={`/product/${p.id}`}>
+        <div className="relative aspect-square overflow-hidden bg-[#12161F]">
+          <SafeImage
+            src={image}
+            alt={p.name}
+            fallbackText={p.name}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+          <span className="absolute left-3 top-3 rounded-full bg-black/90 border border-neutral-800 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-[#CCFF00]">
+            {badge}
+          </span>
+        </div>
+      </Link>
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+            {p.category} · {seller}
+          </div>
+          <Link
+            href={`/product/${p.id}`}
+            className="mt-1.5 block min-h-11 text-base font-bold text-white line-clamp-2 hover:text-[#CCFF00] transition"
+          >
+            {p.name}
+          </Link>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="font-mono text-lg font-semibold text-white tabular-nums">
+                ₹{price.toLocaleString('en-IN')}
+              </div>
+              {oldPrice > price && (
+                <div className="font-mono text-[11px] text-neutral-500 line-through tabular-nums">
+                  ₹{oldPrice.toLocaleString('en-IN')}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                add(p.id, moq);
+                toast.success(`${moq} units added to bulk cart`);
+              }}
+              className="grid h-9 w-9 place-items-center rounded-full bg-[#CCFF00] text-black transition hover:scale-105 active:scale-95 shadow-[0_0_12px_rgba(204,255,0,0.3)]"
+            >
+              <Plus size={17} />
+            </button>
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-neutral-800/80 pt-3 text-[10px] font-bold text-neutral-400">
+            <span>MOQ {moq} units</span>
+            <span className={stock > 0 ? 'text-[#52E82E]' : 'text-amber-400'}>
+              {stock > 0 ? `${stock} available` : 'Out of stock'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductRow({ p }: { p: any }) {
+  const { add } = useCart();
+  const price = Number(p.price) || 0;
+  const image = p.primary_image || p.image || '';
+  const seller = p.brand || p.seller || 'Flash Verified';
+  const moq = p.moq || 1;
+  const stock = p.stock ?? 0;
+
+  return (
+    <div className="flex items-center gap-4 rounded-2xl border border-neutral-800/80 bg-[#0D1117] p-3.5 transition hover:border-neutral-700">
+      <div className="h-16 w-16 overflow-hidden rounded-xl bg-[#12161F]">
+        <SafeImage
+          src={image}
+          alt={p.name}
+          fallbackText={p.name}
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+          {p.category} · {seller}
+        </div>
+        <Link
+          href={`/product/${p.id}`}
+          className="mt-1 block truncate text-base font-bold text-white hover:text-[#CCFF00]"
+        >
+          {p.name}
+        </Link>
+        <div className="mt-1.5 flex gap-4 text-xs font-medium text-neutral-400">
+          <span className="font-mono font-semibold text-white tabular-nums">
+            ₹{price.toLocaleString('en-IN')}
+          </span>
+          <span className={stock > 0 ? 'text-[#52E82E]' : 'text-amber-400'}>
+            MOQ {moq} · {stock} in stock
+          </span>
+        </div>
+      </div>
+      <button
+        onClick={() => {
+          add(p.id, moq);
+          toast.success('Added to cart');
+        }}
+        className="rounded-full bg-[#CCFF00] p-2.5 text-black hover:scale-105 transition"
+      >
+        <Plus size={16} />
+      </button>
+    </div>
+  );
+}
+
+function Shop() {
+  const { cart } = useCart();
+  const { products, isLoading } = useContext(CatalogContext);
+  const [searchInput, setSearchInput] = useState('');
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQuery(searchInput), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  const [category, setCategory] = useState('All');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [filter, setFilter] = useState(false);
+  const [priceMax, setPriceMax] = useState(100000);
+  const [stockOnly, setStockOnly] = useState(false);
+
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const matchCat =
+        category === 'All' ||
+        (p.category || '').toLowerCase().includes(category.toLowerCase().replace(/ & /g, '-')) ||
+        category.toLowerCase().includes((p.category || '').toLowerCase());
+      const matchQuery =
+        !query.trim() ||
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        (p.brand && p.brand.toLowerCase().includes(query.toLowerCase()));
+      const matchPrice = (Number(p.price) || 0) <= priceMax;
+      const matchStock = !stockOnly || (Number(p.stock) || 0) > 0;
+      return matchCat && matchQuery && matchPrice && matchStock;
+    });
+  }, [products, category, query, priceMax, stockOnly]);
+
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header cartCount={cart.reduce((a, b) => a + b.qty, 0)} />
+      <main className="mx-auto max-w-7xl px-4 py-8 pb-24 sm:px-6 lg:px-8">
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <PageTitle
+            eyebrow={`Live Marketplace / ${products.length} verified SKUs`}
+            title="Buy at business speed."
+            desc="Wholesale pricing, verified sellers, and real-time database fulfillment."
+          />
+          <button
+            onClick={() => setFilter(true)}
+            className="mb-8 inline-flex items-center gap-2 self-start rounded-full bg-[#0D1117] border border-neutral-800 px-4 py-3 text-xs font-black uppercase tracking-widest text-[#CCFF00] lg:hidden"
+          >
+            <SlidersHorizontal size={14} /> Filters
+          </button>
+        </div>
+
+        {/* Search & Category Filter Bar with scrollbar-none */}
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-neutral-800/80 bg-[#0D1117] p-3 sm:flex-row">
+          <div className="flex flex-1 items-center gap-3 rounded-xl bg-[#12161F] px-4">
+            <Search size={18} className="text-neutral-500" />
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search products, SKUs, or sellers"
+              className="w-full bg-transparent py-3 text-xs text-white outline-none placeholder:text-neutral-500"
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-none py-1">
+            {['All', ...VALID_CATEGORIES].map((x) => (
+              <button
+                onClick={() => setCategory(x)}
+                key={x}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
+                  category === x
+                    ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)]'
+                    : 'border border-neutral-800 bg-[#12161F] text-neutral-400 hover:border-neutral-700 hover:text-white'
+                }`}
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+          <div className="hidden items-center gap-1 border-l border-neutral-800 pl-3 lg:flex">
+            <button
+              onClick={() => setView('grid')}
+              className={`rounded-lg p-2 ${
+                view === 'grid' ? 'bg-[#CCFF00] text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <LayoutDashboard size={16} />
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`rounded-lg p-2 ${
+                view === 'list' ? 'bg-[#CCFF00] text-black' : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <ClipboardList size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Catalog Grid / Empty State */}
+        {isLoading ? (
+          <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-neutral-800 bg-[#0D1117]">
+            <div className="flex items-center gap-2 text-xs font-bold text-neutral-400">
+              <span className="h-2 w-2 rounded-full bg-[#CCFF00] animate-pulse" />
+              Loading live catalog...
+            </div>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-800 bg-[#0D1117] p-8 text-center">
+            <Package className="h-10 w-10 text-neutral-600 mb-2" />
+            <div className="text-base font-bold text-white">No products found</div>
+            <p className="mt-1 text-xs text-neutral-400 max-w-sm">
+              No products match your search or active filter. Try resetting the category filter.
+            </p>
+            <button
+              onClick={() => {
+                setCategory('All');
+                setSearchInput('');
+              }}
+              className="mt-4 rounded-full bg-[#CCFF00] px-5 py-2 text-xs font-black uppercase text-black"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div
+            className={
+              view === 'grid'
+                ? 'grid gap-5 sm:grid-cols-2 xl:grid-cols-3'
+                : 'grid gap-3'
+            }
+          >
+            {filtered.map((p) =>
+              view === 'grid' ? (
+                <ProductCard p={p} key={p.id || p.name} />
+              ) : (
+                <ProductRow p={p} key={p.id || p.name} />
+              )
+            )}
+          </div>
+        )}
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function ProductPage({ id }: { id: string }) {
+  const { products, isLoading } = useContext(CatalogContext);
+  const p = products.find((x) => x.id === id);
+  const { add } = useCart();
+  const [qty, setQty] = useState(1);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#000000] text-white">
+        <Header />
+        <div className="py-24 text-center text-neutral-400 text-xs font-bold">
+          Loading product details...
+        </div>
+      </div>
+    );
+  }
+
+  if (!p) {
+    return (
+      <div className="min-h-screen bg-[#000000] text-white">
+        <Header />
+        <main className="mx-auto max-w-7xl px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold">Product not found</h1>
+          <p className="mt-2 text-xs text-neutral-400">
+            This SKU might have been updated or removed from the catalog.
+          </p>
+          <Link
+            href="/shop"
+            className="mt-6 inline-block rounded-full bg-[#CCFF00] px-6 py-2.5 text-xs font-black uppercase text-black"
+          >
+            Back to marketplace
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  const price = Number(p.price) || 0;
+  const origPrice = Number(p.original_price || p.price) || price;
+  const tier =
+    qty >= 50 ? Math.round(price * 0.78) : qty >= 10 ? Math.round(price * 0.87) : price;
+
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header />
+      <main className="mx-auto max-w-7xl px-4 py-10 pb-24 sm:px-6 lg:px-8">
+        <Link
+          href="/shop"
+          className="mb-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-neutral-400 hover:text-white"
+        >
+          <ChevronLeft size={14} /> Back to marketplace
+        </Link>
+        <div className="grid gap-10 lg:grid-cols-2">
+          <div className="overflow-hidden rounded-3xl border border-neutral-800 bg-[#0D1117] p-6">
+            <div className="aspect-square w-full overflow-hidden rounded-2xl bg-[#12161F]">
+              <SafeImage
+                src={p.primary_image}
+                alt={p.name}
+                fallbackText={p.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+              {p.category} / {p.brand || 'Flash Verified'}
+            </div>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-white">{p.name}</h1>
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="font-mono text-3xl font-semibold text-white tabular-nums">
+                ₹{tier.toLocaleString('en-IN')}
+              </span>
+              {origPrice > price && (
+                <span className="font-mono text-sm text-neutral-500 line-through tabular-nums">
+                  ₹{origPrice.toLocaleString('en-IN')}
+                </span>
+              )}
+              <span className="rounded-full bg-[#CCFF00] px-2.5 py-1 text-[10px] font-black text-black">
+                WHOLESALE
+              </span>
+            </div>
+            <p className="mt-4 text-xs sm:text-sm font-medium leading-relaxed text-neutral-400">
+              {p.description || 'Verified enterprise quality wholesale listing.'}
+            </p>
+
+            <div className="mt-6 flex items-center justify-between rounded-2xl border border-neutral-800 bg-[#0D1117] p-4">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                  Quantity Units
+                </div>
+                <div className="mt-2 flex items-center rounded-full border border-neutral-800 bg-[#12161F]">
+                  <button
+                    onClick={() => setQty(Math.max(1, qty - 1))}
+                    className="px-4 py-2 text-neutral-400 hover:text-white"
+                  >
+                    −
+                  </button>
+                  <span className="w-12 text-center font-mono text-sm font-semibold tabular-nums">
+                    {qty}
+                  </span>
+                  <button
+                    onClick={() => setQty(qty + 1)}
+                    className="px-4 py-2 text-neutral-400 hover:text-white"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                  Line Total
+                </div>
+                <div className="mt-2 font-mono text-xl font-semibold text-[#CCFF00] tabular-nums">
+                  ₹{(tier * qty).toLocaleString('en-IN')}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <PrimaryButton
+                onClick={() => {
+                  add(p.id || '', qty);
+                  toast.success('Added to bulk cart');
+                }}
+                className="flex-1"
+              >
+                Add to bulk cart <ShoppingCart size={15} />
+              </PrimaryButton>
+            </div>
+          </div>
+        </div>
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function Cart() {
+  const { cart, setQty, remove } = useCart();
+  const { products } = useContext(CatalogContext);
+  const items = cart
+    .map((x) => ({ ...x, p: products.find((p) => p.id === x.productId) }))
+    .filter((x) => x.p);
+
+  const unit = (p: any, q: number) => {
+    const pr = Number(p.price) || 0;
+    return q >= 50 ? Math.round(pr * 0.78) : q >= 10 ? Math.round(pr * 0.87) : pr;
+  };
+
+  const total = items.reduce((s, x) => s + unit(x.p, x.qty) * x.qty, 0);
+
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header cartCount={cart.reduce((a, b) => a + b.qty, 0)} />
+      <main className="mx-auto max-w-7xl px-4 py-10 pb-24 sm:px-6 lg:px-8">
+        <PageTitle
+          eyebrow={`Bulk cart / ${items.length} items`}
+          title="Ready when your team is."
+          desc="Wholesale pricing reflects tiered discount increments."
+        />
+
+        {items.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-neutral-800 bg-[#0D1117] p-14 text-center">
+            <ShoppingCart className="mx-auto text-neutral-600 mb-3" size={38} />
+            <h2 className="text-xl font-bold">Your cart is empty</h2>
+            <Link
+              href="/shop"
+              className="mt-4 inline-block text-xs font-black uppercase text-[#CCFF00] underline"
+            >
+              Browse marketplace
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+            <div className="space-y-4">
+              {items.map((x) => (
+                <div
+                  key={x.p!.id}
+                  className="flex items-center gap-4 rounded-2xl border border-neutral-800 bg-[#0D1117] p-4"
+                >
+                  <div className="h-16 w-16 overflow-hidden rounded-xl bg-[#12161F]">
+                    <SafeImage
+                      src={x.p!.primary_image}
+                      alt={x.p!.name}
+                      fallbackText={x.p!.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-white line-clamp-1">{x.p!.name}</div>
+                    <div className="mt-1 text-xs text-neutral-400 font-mono">
+                      ₹{unit(x.p, x.qty).toLocaleString('en-IN')} / unit
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        onClick={() => setQty(x.p!.id!, x.qty - 1)}
+                        className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300"
+                      >
+                        −
+                      </button>
+                      <span className="font-mono text-xs font-semibold tabular-nums px-1">
+                        {x.qty}
+                      </span>
+                      <button
+                        onClick={() => setQty(x.p!.id!, x.qty + 1)}
+                        className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => remove(x.p!.id!)}
+                    className="text-neutral-500 hover:text-red-400"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="h-fit rounded-3xl border border-neutral-800 bg-[#0D1117] p-6 text-white">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
+                Order Summary
+              </div>
+              <div className="mt-4 flex justify-between border-t border-neutral-800 pt-4 text-base font-bold">
+                <span>Estimated total</span>
+                <span className="font-mono font-semibold text-[#CCFF00] tabular-nums">
+                  ₹{total.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <PrimaryButton href="/checkout" className="mt-6 w-full">
+                Continue to checkout <ArrowRight size={15} />
+              </PrimaryButton>
+            </div>
+          </div>
+        )}
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function Checkout() {
+  const [step, setStep] = usePersistentState<number>('flash-checkout-step', 1);
+  const { cart, clear } = useCart();
+  const [, navigate] = useLocation();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handlePlaceOrder = async () => {
+    setIsProcessing(true);
+    try {
+      // Decrement inventory stock in Supabase for each cart item
+      await Promise.all(
+        cart.map((item) => decrementProductStock(item.productId, item.qty))
+      );
+
+      clear();
+      setStep(3);
+      toast.success('Order placed! Inventory updated live in Supabase.');
+    } catch (err) {
+      console.error('Checkout stock decrement error:', err);
+      toast.error('Could not sync stock with Supabase');
+      setStep(3);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header />
+      <main className="mx-auto max-w-3xl px-4 py-10 pb-24 sm:px-6">
+        <PageTitle
+          eyebrow={`Checkout / Step ${step} of 3`}
+          title="Instant enterprise fulfillment."
+        />
+
+        <div className="rounded-3xl border border-neutral-800 bg-[#0D1117] p-6 sm:p-9">
+          {step === 1 && (
+            <div>
+              <h2 className="text-xl font-bold text-white">Delivery Location</h2>
+              <div className="mt-4 rounded-2xl border border-neutral-800 bg-[#12161F] p-4 text-xs">
+                <div className="font-bold text-white">Primary Enterprise Hub</div>
+                <div className="text-neutral-400 mt-1">
+                  Unit 4B, Sector 18, Commercial Zone, Gurgaon, HR 122015
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <PrimaryButton onClick={() => setStep(2)}>
+                  Continue to payment <ArrowRight size={15} />
+                </PrimaryButton>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <h2 className="text-xl font-bold text-white">Payment Method</h2>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between rounded-2xl border border-[#CCFF00] bg-[#12161F] p-4 text-xs font-bold">
+                  <span>Corporate Net-30 Terms</span>
+                  <Check size={16} className="text-[#CCFF00]" />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <PrimaryButton onClick={handlePlaceOrder} disabled={isProcessing}>
+                  {isProcessing ? 'Updating Supabase...' : 'Confirm Order'} <ArrowRight size={15} />
+                </PrimaryButton>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="py-8 text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#CCFF00] text-black">
+                <Check size={28} />
+              </div>
+              <h2 className="mt-4 text-2xl font-bold text-white">Order Confirmed!</h2>
+              <p className="mt-2 text-xs text-neutral-400 max-w-sm mx-auto">
+                Stock has been decremented live in Supabase table <code className="text-[#CCFF00]">products</code>.
+              </p>
+              <Link
+                href="/shop"
+                onClick={() => setStep(1)}
+                className="mt-6 inline-block rounded-full bg-[#CCFF00] px-6 py-2.5 text-xs font-black uppercase text-black"
+              >
+                Back to marketplace
+              </Link>
+            </div>
+          )}
+        </div>
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function Quotes() {
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header />
+      <main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 lg:px-8">
+        <PageTitle
+          eyebrow="Buyer workspace / RFQs"
+          title="Your quote inbox."
+          desc="Negotiate directly with verified suppliers for volume orders."
+        />
+        <div className="rounded-3xl border border-dashed border-neutral-800 bg-[#0D1117] p-12 text-center text-neutral-400 text-xs font-medium">
+          <Quote className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
+          <div className="text-base font-bold text-white">No active quote requests</div>
+          <div className="mt-1">Inquiries requested from suppliers will appear here.</div>
+        </div>
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function Orders() {
+  return (
+    <div className="min-h-screen bg-[#000000] text-white">
+      <Header />
+      <main className="mx-auto max-w-5xl px-4 py-10 pb-24 sm:px-6 lg:px-8">
+        <PageTitle
+          eyebrow="Buyer workspace / Orders"
+          title="Your orders, in motion."
+          desc="Track fulfillment and download consignment waybills."
+        />
+        <div className="rounded-3xl border border-dashed border-neutral-800 bg-[#0D1117] p-12 text-center text-neutral-400 text-xs font-medium">
+          <Truck className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
+          <div className="text-base font-bold text-white">No orders placed yet</div>
+          <div className="mt-1">Placed wholesale orders will appear here for shipment tracking.</div>
+        </div>
+      </main>
+      <MobileBar />
+    </div>
+  );
+}
+
+function Auth({ signup = false }: { signup?: boolean }) {
+  const [, navigate] = useLocation();
+  const demoLogin = (target: 'buyer' | 'seller') => {
+    localStorage.setItem('flash-role', target);
+    navigate(target === 'buyer' ? '/shop' : '/seller/dashboard');
+    toast.success(`${target === 'buyer' ? 'Buyer' : 'Seller'} workspace loaded`);
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#000000] p-4 text-white">
+      <div className="w-full max-w-md rounded-3xl border border-neutral-800 bg-[#0D1117] p-8 shadow-2xl">
+        <FlashLogo />
+        <h2 className="mt-6 text-2xl font-bold">
+          {signup ? 'Create an account' : 'Sign in to Flash'}
+        </h2>
+        <p className="mt-1 text-xs text-neutral-400">
+          Select your workspace demo to continue.
+        </p>
+        <div className="mt-6 space-y-3">
+          <button
+            onClick={() => demoLogin('seller')}
+            className="w-full rounded-2xl bg-[#CCFF00] py-3 text-xs font-black uppercase text-black hover:bg-[#b8e600] transition"
+          >
+            Access Seller Central (Supabase Live)
+          </button>
+          <button
+            onClick={() => demoLogin('buyer')}
+            className="w-full rounded-2xl border border-neutral-800 bg-[#12161F] py-3 text-xs font-bold uppercase text-neutral-300 hover:text-white transition"
+          >
+            Access Buyer Marketplace
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppRouter() {
+  const [location] = useLocation();
+  const liveProductsState = useLiveProducts();
+
+  return (
+    <CatalogContext.Provider value={liveProductsState}>
+      {(() => {
+        if (location === '/') return <Home />;
+        if (location === '/shop') return <Shop />;
+        if (location.startsWith('/product/'))
+          return <ProductPage id={location.split('/')[2]} />;
+        if (location === '/cart') return <Cart />;
+        if (location === '/checkout') return <Checkout />;
+        if (location === '/buyer/quotes') return <Quotes />;
+        if (location === '/buyer/orders') return <Orders />;
+        if (location === '/auth/login') return <Auth />;
+        if (location === '/auth/signup') return <Auth signup />;
+        if (location.startsWith('/seller')) return <SellerDashboardView />;
+        return <Home />;
+      })()}
+    </CatalogContext.Provider>
+  );
+}
+
 export default AppRouter;

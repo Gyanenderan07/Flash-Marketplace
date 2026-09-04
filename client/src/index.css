@@ -32,4 +32,12 @@ button { cursor: pointer; }
 .btn-flash { transition: transform .16s cubic-bezier(.23,1,.32,1), box-shadow .2s ease, background .2s ease; }
 .btn-flash:hover { transform: translateY(-2px); box-shadow: 0 0 18px rgba(204,255,0,.32); }
 .btn-flash:active { transform: scale(.97); }
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }

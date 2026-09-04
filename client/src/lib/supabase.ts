@@ -302,6 +302,35 @@ export async function updateProductStock(id: string, newStock: number) {
 }
 
 /**
+ * Decrements product inventory stock upon order placement / checkout
+ */
+export async function decrementProductStock(id: string, quantity: number) {
+  try {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("stock")
+      .eq("id", id)
+      .single();
+
+    if (!prod) return null;
+    const currentStock = Number(prod.stock) || 0;
+    const newStock = Math.max(0, currentStock - quantity);
+
+    const { data, error } = await supabase
+      .from("products")
+      .update({ stock: newStock })
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+    return data?.[0] as SupabaseProduct;
+  } catch (err) {
+    console.error("Error decrementing stock:", err);
+    return null;
+  }
+}
+
+/**
  * Deletes a product from the live catalog
  */
 export async function deleteProductFromCatalog(id: string) {
