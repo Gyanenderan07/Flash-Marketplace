@@ -1,43 +1,288 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-:root {
-  --background: #f6f7f8;
-  --foreground: #101217;
-  --card: #ffffff;
-  --card-foreground: #101217;
-  --muted: #eef0f2;
-  --muted-foreground: #6a717d;
-  --border: #e1e4e8;
-  --primary: #0a0b0d;
-  --primary-foreground: #ccff00;
-  --accent: #ccff00;
-  --accent-foreground: #0a0b0d;
-  --radius: 1rem;
+/* ============================================================
+   FLASH DESIGN SYSTEM — CSS CUSTOM PROPERTIES
+   Dark Mode (default) + Light Mode via [data-theme="light"]
+   ============================================================ */
+:root,
+[data-theme="dark"] {
+  /* Base surfaces */
+  --bg-base:        #000000;
+  --bg-card:        #0D1117;
+  --bg-card-alt:    #141822;
+  --bg-well:        #12161F;
+  --bg-well-alt:    #1A1F2B;
+
+  /* Borders */
+  --border-base:    #1F2430;
+  --border-muted:   rgba(255,255,255,0.06);
+
+  /* Text */
+  --text-primary:   #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --text-tertiary:  #6B7280;
+
+  /* Accent */
+  --accent:         #CCFF00;
+  --accent-fg:      #000000;
+
+  /* Status */
+  --success:        #52E82E;
+  --warning:        #F59E0B;
+  --danger:         #EF4444;
+
+  /* Shadows */
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.6);
+  --shadow-accent:  0 0 20px rgba(204,255,0,0.25);
+
+  /* Scrollbar */
+  color-scheme: dark;
+
+  /* Tailwind compat */
+  --background:          var(--bg-base);
+  --foreground:          var(--text-primary);
+  --card:                var(--bg-card);
+  --card-foreground:     var(--text-primary);
+  --muted:               var(--bg-well);
+  --muted-foreground:    var(--text-secondary);
+  --border:              var(--border-base);
+  --primary:             var(--accent);
+  --primary-foreground:  var(--accent-fg);
+  --accent:              #CCFF00;
+  --accent-foreground:   #000000;
+  --radius:              1rem;
 }
 
-* { box-sizing: border-box; }
+[data-theme="light"] {
+  --bg-base:        #F8F9FA;
+  --bg-card:        #FFFFFF;
+  --bg-card-alt:    #F1F3F5;
+  --bg-well:        #F1F3F5;
+  --bg-well-alt:    #E8EAED;
+
+  --border-base:    #E5E7EB;
+  --border-muted:   rgba(0,0,0,0.07);
+
+  --text-primary:   #111827;
+  --text-secondary: #4B5563;
+  --text-tertiary:  #9CA3AF;
+
+  --accent:         #CCFF00;
+  --accent-fg:      #000000;
+
+  --success:        #16A34A;
+  --warning:        #D97706;
+  --danger:         #DC2626;
+
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.08);
+  --shadow-accent:  0 0 20px rgba(204,255,0,0.35);
+
+  color-scheme: light;
+
+  --background:          var(--bg-base);
+  --foreground:          var(--text-primary);
+  --card:                var(--bg-card);
+  --card-foreground:     var(--text-primary);
+  --muted:               var(--bg-well);
+  --muted-foreground:    var(--text-secondary);
+  --border:              var(--border-base);
+  --primary:             #000000;
+  --primary-foreground:  #CCFF00;
+  --accent:              #CCFF00;
+  --accent-foreground:   #000000;
+  --radius:              1rem;
+}
+
+/* ============================================================
+   GLOBAL RESETS & BASE STYLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
 html, body, #root { min-height: 100%; }
-html, body { max-width: 100vw; overflow-x: hidden; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { background: var(--background); color: var(--foreground); font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif; }
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
 button, a, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
-::selection { background: #ccff00; color: #0a0b0d; }
-.font-mono { font-family: 'DM Mono', monospace; }
-.flash-grid { background-image: linear-gradient(rgba(16,18,23,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(16,18,23,.045) 1px, transparent 1px); background-size: 32px 32px; }
-.flash-dark-grid { background-color: #0a0b0d; background-image: linear-gradient(rgba(204,255,0,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(204,255,0,.07) 1px, transparent 1px); background-size: 32px 32px; }
-.flash-shadow { box-shadow: 0 18px 50px rgba(13,16,20,.08); }
-.flash-lime-shadow { box-shadow: 0 0 20px rgba(204,255,0,.28); }
-.btn-flash { transition: transform .16s cubic-bezier(.23,1,.32,1), box-shadow .2s ease, background .2s ease; }
-.btn-flash:hover { transform: translateY(-2px); box-shadow: 0 0 18px rgba(204,255,0,.32); }
-.btn-flash:active { transform: scale(.97); }
+
+::selection { background: #CCFF00; color: #000000; }
+
+/* ============================================================
+   TYPOGRAPHY UTILITIES
+   ============================================================ */
+.font-mono { font-family: 'DM Mono', 'Fira Code', monospace; }
+
+.flash-headline {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+/* ============================================================
+   FLASH DESIGN TOKENS — UTILITY CLASSES
+   ============================================================ */
+
+/* Backgrounds */
+.flash-bg-base    { background: var(--bg-base); }
+.flash-bg-card    { background: var(--bg-card); }
+.flash-bg-well    { background: var(--bg-well); }
+
+/* Borders */
+.flash-border     { border-color: var(--border-base); }
+.flash-border-muted { border-color: var(--border-muted); }
+
+/* Text */
+.flash-text       { color: var(--text-primary); }
+.flash-text-muted { color: var(--text-secondary); }
+
+/* Accent button base */
+.flash-btn-accent {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 900;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 9999px;
+  padding: 0.6rem 1.25rem;
+  transition: transform 0.15s cubic-bezier(0.23,1,0.32,1), box-shadow 0.2s ease;
+  box-shadow: var(--shadow-accent);
+}
+.flash-btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(204,255,0,0.4);
+}
+.flash-btn-accent:active { transform: scale(0.97); }
+
+/* Ghost button */
+.flash-btn-ghost {
+  background: var(--bg-well);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-base);
+  border-radius: 9999px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.flash-btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+/* Card */
+.flash-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-base);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.flash-card:hover { border-color: rgba(204,255,0,0.3); }
+
+/* Surface / well input */
+.flash-input {
+  background: var(--bg-well);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.75rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.flash-input:focus { border-color: var(--accent); }
+.flash-input::placeholder { color: var(--text-tertiary); }
+
+/* ============================================================
+   BACKGROUND GRID PATTERNS
+   ============================================================ */
+.flash-grid {
+  background-image:
+    linear-gradient(rgba(16,18,23,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16,18,23,.045) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.flash-dark-grid {
+  background-color: #0a0b0d;
+  background-image:
+    linear-gradient(rgba(204,255,0,.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(204,255,0,.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ============================================================
+   SHADOWS
+   ============================================================ */
+.flash-shadow      { box-shadow: 0 18px 50px rgba(13,16,20,.08); }
+.flash-lime-shadow { box-shadow: var(--shadow-accent); }
+
+/* ============================================================
+   SCROLLBAR UTILITIES
+   ============================================================ */
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Thin custom scrollbar for modal/drawer content */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-base) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-base);
+  border-radius: 4px;
 }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+/* ============================================================
+   CHART OVERRIDES (recharts)
+   ============================================================ */
+.recharts-tooltip-wrapper { outline: none; }
+.recharts-default-tooltip {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-base) !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.7rem !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+.recharts-tooltip-label { color: var(--text-secondary) !important; font-weight: 700; }
+.recharts-cartesian-axis-tick-value { fill: var(--text-tertiary) !important; font-size: 10px; }
+
+/* ============================================================
+   MOTION PERFORMANCE — GPU COMPOSITING
+   ============================================================ */
+.will-transform { will-change: transform; }
+
+/* ============================================================
+   REDUCED MOTION SAFETY NET
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
