@@ -1,31 +1,41 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * Production Supabase Instance Binding:
- * Project ID: deldhtqoygpoozbrfpgv
- * Target Storefront: https://flash-beryl.vercel.app
+ * Standardized Supabase Client Singleton
+ * Prioritizes VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from environment variables
+ * with graceful fallback to prevent build-time failures.
  */
 
-export const SUPABASE_URL =
-  (typeof import.meta !== "undefined" && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL) ||
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) ||
-  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_URL) ||
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL ||
+  import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://deldhtqoygpoozbrfpgv.supabase.co";
 
-export const SUPABASE_ANON_KEY =
-  (typeof import.meta !== "undefined" && import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
-  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "sb_publishable_66X8kv19-K-kjCy3uJC33g_v0G2V4JN";
 
-export const BUYER_STOREFRONT_URL = "https://flash-beryl.vercel.app";
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
   },
 });
+
+export const SUPABASE_URL = supabaseUrl;
+export const SUPABASE_ANON_KEY = supabaseAnonKey;
+
+const getProjectRef = (url: string) => {
+  try {
+    return new URL(url).hostname.split(".")[0] || "deldhtqoygpoozbrfpgv";
+  } catch {
+    return "deldhtqoygpoozbrfpgv";
+  }
+};
+
+export const SUPABASE_PROJECT_ID = getProjectRef(supabaseUrl);
+export const BUYER_STOREFRONT_URL = "https://flash-beryl.vercel.app";
 
 export const VALID_CATEGORIES = [
   "Electronics",
@@ -91,7 +101,7 @@ export async function pingSupabase(): Promise<DatabaseHealth> {
       return {
         ok: false,
         latencyMs,
-        instance: "deldhtqoygpoozbrfpgv",
+        instance: SUPABASE_PROJECT_ID,
         skuCount: 0,
         lastChecked: new Date().toLocaleTimeString(),
       };
@@ -100,7 +110,7 @@ export async function pingSupabase(): Promise<DatabaseHealth> {
     return {
       ok: true,
       latencyMs,
-      instance: "deldhtqoygpoozbrfpgv",
+      instance: SUPABASE_PROJECT_ID,
       skuCount: count || 0,
       lastChecked: new Date().toLocaleTimeString(),
     };
@@ -108,7 +118,7 @@ export async function pingSupabase(): Promise<DatabaseHealth> {
     return {
       ok: false,
       latencyMs: Math.round(performance.now() - start),
-      instance: "deldhtqoygpoozbrfpgv",
+      instance: SUPABASE_PROJECT_ID,
       skuCount: 0,
       lastChecked: new Date().toLocaleTimeString(),
     };

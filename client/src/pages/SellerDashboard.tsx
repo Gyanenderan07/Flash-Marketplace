@@ -49,6 +49,7 @@ import {
   getBuyerProductUrl,
   VALID_CATEGORIES,
   BUYER_STOREFRONT_URL,
+  SUPABASE_PROJECT_ID,
   type SupabaseProduct,
   type SupabaseOrder,
   type DatabaseHealth,
@@ -141,7 +142,7 @@ export default function SellerDashboard({
   const [dbHealth, setDbHealth] = useState<DatabaseHealth>({
     ok: true,
     latencyMs: 38,
-    instance: 'deldhtqoygpoozbrfpgv',
+    instance: SUPABASE_PROJECT_ID,
     skuCount: 0,
     lastChecked: 'Connecting...'
   });
@@ -194,7 +195,7 @@ export default function SellerDashboard({
   const [aiChat, setAiChat] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
     {
       role: 'assistant',
-      text: 'Hello! I am your Flash Merchant Copilot connected to Supabase instance deldhtqoygpoozbrfpgv. Ask me to draft product descriptions, analyze catalog pricing, or monitor stock velocity.'
+      text: `Hello! I am your Flash Merchant Copilot connected to Supabase instance ${SUPABASE_PROJECT_ID}. Ask me to draft product descriptions, analyze catalog pricing, or monitor stock velocity.`
     }
   ]);
 
@@ -497,7 +498,7 @@ export default function SellerDashboard({
 
       if (qLower.includes('stock') || qLower.includes('inventory')) {
         const lowStock = products.filter((p) => (p.stock ?? 0) < 10);
-        reply = `Inventory Analysis for deldhtqoygpoozbrfpgv:
+        reply = `Inventory Analysis for ${dbHealth.instance || SUPABASE_PROJECT_ID}:
 • Total Active SKUs: ${products.length}
 • Low-Stock Items (< 10 units): ${lowStock.length} items (${lowStock.map((p) => p.name).slice(0, 3).join(', ')})
 • Recommendation: Reorder threshold triggered. Ensure primary supplier lead times are under 48 hours.`;
