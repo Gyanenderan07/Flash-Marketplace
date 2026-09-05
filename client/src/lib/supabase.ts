@@ -348,3 +348,337 @@ export function getBuyerProductUrl(id?: string): string {
   if (!id) return BUYER_STOREFRONT_URL;
   return `${BUYER_STOREFRONT_URL}/product/${id}`;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SELLER CENTRAL — NEW QUERY FUNCTIONS
+//  All queries are scoped to DEMO_SELLER_ID.
+//  TODO: replace DEMO_SELLER_ID with auth.uid() after Supabase Auth integration.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import type {
+  Seller, ProductExtended, ProductPriceTier, ProductVariant,
+  OrderExtended, Quote, Return, Promotion, Payout, LedgerEntry,
+  SellerTeamMember, QuoteThreadMessage, StatusTimelineEntry,
+  TeamMemberRole
+} from './seller-types';
+export type {
+  Seller, ProductExtended, ProductPriceTier, ProductVariant,
+  OrderExtended, Quote, Return, Promotion, Payout, LedgerEntry,
+  SellerTeamMember, QuoteThreadMessage, StatusTimelineEntry,
+  TeamMemberRole
+};
+export { DEMO_SELLER_ID } from './seller-types';
+
+/**
+ * Fetch the seller profile row for the demo seller
+ */
+export async function getSeller(): Promise<Seller | null> {
+  try {
+    const { data, error } = await supabase
+      .from('sellers')
+      .select('*')
+      .eq('id', '00000000-0000-0000-0000-000000000001')
+      .single();
+    if (error) { console.warn('getSeller:', error.message); return null; }
+    return data as Seller;
+  } catch { return null; }
+}
+
+/**
+ * Update seller profile fields
+ */
+export async function updateSeller(patch: Partial<Seller>): Promise<Seller | null> {
+  try {
+    const { data, error } = await supabase
+      .from('sellers')
+      .update(patch)
+      .eq('id', '00000000-0000-0000-0000-000000000001')
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Seller;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Fetch the full extended products list (with new columns)
+ */
+export async function getExtendedCatalog(): Promise<ProductExtended[]> {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getExtendedCatalog:', error.message); return []; }
+    return (data as ProductExtended[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Fetch price tiers for a product
+ */
+export async function getPriceTiers(productId: string): Promise<ProductPriceTier[]> {
+  try {
+    const { data, error } = await supabase
+      .from('product_price_tiers')
+      .select('*')
+      .eq('product_id', productId)
+      .order('min_qty', { ascending: true });
+    if (error) { console.warn('getPriceTiers:', error.message); return []; }
+    return (data as ProductPriceTier[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Upsert price tiers for a product (replace all)
+ */
+export async function upsertPriceTiers(
+  productId: string,
+  tiers: Array<{ min_qty: number; unit_price: number }>
+): Promise<void> {
+  await supabase.from('product_price_tiers').delete().eq('product_id', productId);
+  if (tiers.length === 0) return;
+  await supabase.from('product_price_tiers').insert(
+    tiers.map(t => ({ product_id: productId, seller_id: '00000000-0000-0000-0000-000000000001', ...t }))
+  );
+}
+
+/**
+ * Fetch variants for a product
+ */
+export async function getVariants(productId: string): Promise<ProductVariant[]> {
+  try {
+    const { data, error } = await supabase
+      .from('product_variants')
+      .select('*')
+      .eq('product_id', productId);
+    if (error) { console.warn('getVariants:', error.message); return []; }
+    return (data as ProductVariant[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Fetch extended orders
+ */
+export async function getExtendedOrders(): Promise<OrderExtended[]> {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getExtendedOrders:', error.message); return []; }
+    return (data as OrderExtended[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Update order carrier / tracking / status_timeline
+ */
+export async function dispatchOrder(
+  orderId: string,
+  patch: Partial<OrderExtended>
+): Promise<OrderExtended | null> {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .update(patch)
+      .eq('id', orderId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as OrderExtended;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Fetch all RFQ quotes for this seller
+ */
+export async function getQuotes(): Promise<Quote[]> {
+  try {
+    const { data, error } = await supabase
+      .from('quotes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getQuotes:', error.message); return []; }
+    return (data as Quote[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Respond to a quote
+ */
+export async function respondToQuote(
+  quoteId: string,
+  patch: Partial<Quote>
+): Promise<Quote | null> {
+  try {
+    const { data, error } = await supabase
+      .from('quotes')
+      .update(patch)
+      .eq('id', quoteId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as Quote;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Fetch all returns
+ */
+export async function getReturns(): Promise<Return[]> {
+  try {
+    const { data, error } = await supabase
+      .from('returns')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getReturns:', error.message); return []; }
+    return (data as Return[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Update a return record
+ */
+export async function updateReturn(id: string, patch: Partial<Return>): Promise<void> {
+  const { error } = await supabase.from('returns').update(patch).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fetch all promotions
+ */
+export async function getPromotions(): Promise<Promotion[]> {
+  try {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getPromotions:', error.message); return []; }
+    return (data as Promotion[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Insert a promotion
+ */
+export async function insertPromotion(
+  p: Omit<Promotion, 'id' | 'seller_id' | 'created_at'>
+): Promise<Promotion> {
+  const { data, error } = await supabase
+    .from('promotions')
+    .insert([{ ...p, seller_id: '00000000-0000-0000-0000-000000000001' }])
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Promotion;
+}
+
+/**
+ * Toggle promotion active state
+ */
+export async function togglePromotion(id: string, active: boolean): Promise<void> {
+  const { error } = await supabase.from('promotions').update({ active }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Delete a promotion
+ */
+export async function deletePromotion(id: string): Promise<void> {
+  const { error } = await supabase.from('promotions').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fetch payout history
+ */
+export async function getPayouts(): Promise<Payout[]> {
+  try {
+    const { data, error } = await supabase
+      .from('payouts')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getPayouts:', error.message); return []; }
+    return (data as Payout[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Fetch ledger entries
+ */
+export async function getLedgerEntries(): Promise<LedgerEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from('ledger_entries')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getLedgerEntries:', error.message); return []; }
+    return (data as LedgerEntry[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Insert a ledger entry (e.g. refund)
+ */
+export async function insertLedgerEntry(
+  entry: Omit<LedgerEntry, 'id' | 'seller_id' | 'created_at'>
+): Promise<void> {
+  const { error } = await supabase.from('ledger_entries').insert([{
+    ...entry,
+    seller_id: '00000000-0000-0000-0000-000000000001'
+  }]);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Fetch team members
+ */
+export async function getTeamMembers(): Promise<SellerTeamMember[]> {
+  try {
+    const { data, error } = await supabase
+      .from('seller_team_members')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.warn('getTeamMembers:', error.message); return []; }
+    return (data as SellerTeamMember[]) || [];
+  } catch { return []; }
+}
+
+/**
+ * Invite a team member
+ */
+export async function inviteTeamMember(
+  email: string,
+  role: SellerTeamMember['role']
+): Promise<SellerTeamMember> {
+  const { data, error } = await supabase
+    .from('seller_team_members')
+    .insert([{
+      seller_id: '00000000-0000-0000-0000-000000000001',
+      invited_email: email,
+      role,
+      status: 'invited'
+    }])
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data as SellerTeamMember;
+}
+
+/**
+ * Remove a team member
+ */
+export async function removeTeamMember(id: string): Promise<void> {
+  const { error } = await supabase.from('seller_team_members').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}

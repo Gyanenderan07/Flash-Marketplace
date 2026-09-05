@@ -38,6 +38,16 @@ import {
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import SellerDashboardView from './SellerDashboard';
+import ListingsPage    from './seller/ListingsPage';
+import InventoryPage   from './seller/InventoryPage';
+import OrdersPage      from './seller/OrdersPage';
+import RFQPage         from './seller/RFQPage';
+import PromotionsPage  from './seller/PromotionsPage';
+import ReturnsPage     from './seller/ReturnsPage';
+import PayoutsPage     from './seller/PayoutsPage';
+import HealthPage      from './seller/HealthPage';
+import AnalyticsPage   from './seller/AnalyticsPage';
+import SettingsPage    from './seller/SettingsPage';
 import {
   supabase,
   getLiveCatalog,
@@ -1157,7 +1167,18 @@ function AppRouter() {
         if (location === '/buyer/orders') return <Orders />;
         if (location === '/auth/login') return <Auth />;
         if (location === '/auth/signup') return <Auth signup />;
-        if (location.startsWith('/seller')) return <SellerDashboardView />;
+        if (location === '/seller' || location === '/seller/dashboard') return <SellerDashboardView />;
+        if (location === '/seller/listings')   return <ListingsPage />;
+        if (location === '/seller/inventory')  return <InventoryPage />;
+        if (location === '/seller/orders')     return <OrdersPage />;
+        if (location === '/seller/rfq')        return <RFQPage />;
+        if (location === '/seller/promotions') return <PromotionsPage />;
+        if (location === '/seller/returns')    return <ReturnsPage />;
+        if (location === '/seller/payouts')    return <PayoutsPage />;
+        if (location === '/seller/health')     return <HealthPage />;
+        if (location === '/seller/analytics')  return <AnalyticsPage />;
+        if (location === '/seller/settings')   return <SettingsPage />;
+        if (location.startsWith('/seller'))    return <SellerDashboardView />;
         return <Home />;
       })()}
     </CatalogContext.Provider>

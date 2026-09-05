@@ -2,6 +2,18 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@theme {
+  --color-obsidian: #000000;
+  --color-surface1: #0D1117;
+  --color-surface2: #12161F;
+  --color-neon: #CCFF00;
+  --color-borderDark: #1F2430;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-danger: #DC2626;
+  --color-info: #2563EB;
+}
+
 /* ============================================================
    FLASH DESIGN SYSTEM — CSS CUSTOM PROPERTIES
    Dark Mode (default) + Light Mode via [data-theme="light"]
