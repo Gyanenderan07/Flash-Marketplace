@@ -65,6 +65,7 @@ import {
 } from '@/lib/supabase';
 import { SafeImage } from '@/components/SafeImage';
 import { useTheme } from '@/contexts/ThemeContext';
+import SellerShell from './seller/SellerShell';
 
 // ─── Animation presets ───────────────────────────────────────────────────────
 const SPRING_TABS   = { type: 'spring', stiffness: 380, damping: 30 } as const;
@@ -665,125 +666,8 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
   //  RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={FADE_SLIDE}
-      className={`min-h-screen antialiased selection:bg-[#CCFF00] selection:text-black ${C.base}`}
-    >
-      {/* ═══════════════════════════════════════
-          TOP NAVIGATION BAR
-         ═══════════════════════════════════════ */}
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${C.header}`}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Link href="/seller/dashboard" className="flex items-center gap-2.5">
-              <motion.span
-                whileHover={{ scale: 1.05 }}
-                className="grid h-9 w-9 place-items-center rounded-xl bg-[#CCFF00] text-black shadow-[0_0_16px_rgba(204,255,0,0.3)]"
-              >
-                <Zap size={20} fill="currentColor" />
-              </motion.span>
-              <div className="hidden sm:flex flex-col leading-none">
-                <span className={`text-base font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  flash<span className="text-[#CCFF00]">.merchant</span>
-                </span>
-                <span className={`text-[9px] font-bold uppercase tracking-widest ${C.subtle}`}>
-                  Seller Central
-                </span>
-              </div>
-            </Link>
-
-            {/* Operational status badge — no raw debug info */}
-            <div className={`hidden md:inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${C.pill}`}>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#52E82E] shadow-[0_0_6px_#52E82E] animate-pulse" />
-              <span className={isDark ? 'text-neutral-400' : 'text-gray-500'}>Operational</span>
-            </div>
-          </div>
-
-          {/* Right nav */}
-          <div className="flex items-center gap-2">
-            {/* View Storefront */}
-            <a
-              href={BUYER_STOREFRONT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`hidden sm:inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition hover:-translate-y-0.5 ${
-                isDark
-                  ? 'border-neutral-700 bg-[#12161F] text-neutral-300 hover:border-[#CCFF00] hover:text-[#CCFF00]'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-[#CCFF00] hover:text-black'
-              }`}
-            >
-              Storefront <ExternalLink size={11} />
-            </a>
-
-            {/* Refresh */}
-            <motion.button
-              whileTap={{ rotate: 360 }}
-              transition={{ duration: 0.4 }}
-              onClick={() => { loadData(); toast.success('Catalog refreshed'); }}
-              disabled={isRefreshing}
-              className={`rounded-full border p-2 transition ${C.pill} ${C.muted} hover:text-[#CCFF00] disabled:opacity-50`}
-              title="Refresh"
-            >
-              <RefreshCw size={15} className={isRefreshing ? 'animate-spin text-[#CCFF00]' : ''} />
-            </motion.button>
-
-            {/* Theme toggle */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={toggleTheme}
-              className={`rounded-full border p-2 transition ${C.pill} ${C.muted} hover:text-[#CCFF00]`}
-              title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={theme}
-                  initial={{ opacity: 0, rotate: -30, scale: 0.7 }}
-                  animate={{ opacity: 1, rotate: 0,   scale: 1   }}
-                  exit={{   opacity: 0, rotate: 30,   scale: 0.7 }}
-                  transition={{ duration: 0.2 }}
-                  className="block"
-                >
-                  {isDark ? <Sun size={15} /> : <Moon size={15} />}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-
-            {/* Bell */}
-            <button className={`rounded-full border p-2 transition ${C.pill} ${C.muted} hover:text-white relative`}>
-              <Bell size={15} />
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#CCFF00]" />
-            </button>
-
-            {/* Avatar + name */}
-            <div className={`flex items-center gap-2 border-l pl-3 ${C.divider}`}>
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-[#CCFF00] text-[10px] font-black text-black select-none">
-                NS
-              </div>
-              <div className="hidden lg:block">
-                <div className={`text-xs font-black leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Northstar Co.</div>
-                <StatusChip label="Verified Tier 1" variant="accent" />
-              </div>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={handleLogout}
-                className={`ml-1 rounded-full p-1.5 transition ${C.muted} hover:text-red-400`}
-                title="Sign out"
-              >
-                <LogOut size={14} />
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ═══════════════════════════════════════
-          MAIN CONTENT
-         ═══════════════════════════════════════ */}
-      <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
+    <SellerShell title="Dashboard">
+      <div className="space-y-6">
 
         {/* ── HERO BANNER ── */}
         <div className={`relative mb-7 overflow-hidden rounded-3xl border p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5 ${C.heroCard}`}>
@@ -1424,7 +1308,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </div>
 
       {/* ═══════════════════════════════════════
           FLOATING AI WIDGET
@@ -1784,6 +1668,6 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </SellerShell>
   );
 }

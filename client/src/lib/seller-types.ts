@@ -26,7 +26,7 @@ export interface Seller {
 }
 
 // ─── Product extensions ───────────────────────────────────────────────────────
-export type ProductStatus = 'draft' | 'active' | 'suppressed';
+export type ProductStatus = 'draft' | 'active' | 'suppressed' | 'archived';
 
 export interface ProductExtended {
   id: string;
@@ -42,12 +42,14 @@ export interface ProductExtended {
   hover_images: string[] | null;
   colors: Array<{ name: string; hex: string }> | null;
   created_at: string;
+  updated_at?: string | null;
   // Extended fields
   seller_id: string | null;
   sku: string | null;
   moq: number;
   status: ProductStatus;
   low_stock_threshold: number;
+  tiered_pricing?: Array<{ minQty: number; price: number }> | null;
   certifications: Record<string, string> | null;
   shipping: ProductShipping | null;
 }

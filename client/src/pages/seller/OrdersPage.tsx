@@ -23,13 +23,13 @@ const FADE      = { duration: 0.2, ease: 'easeOut' } as const;
 type StatusTab = 'all' | 'pending' | 'processing' | 'dispatched' | 'delivered' | 'cancelled' | 'returned';
 
 const STATUS_TABS: { id: StatusTab; label: string }[] = [
-  { id: 'all',        label: 'All'        },
-  { id: 'pending',    label: 'New'        },
-  { id: 'processing', label: 'Processing' },
-  { id: 'dispatched', label: 'Shipped'    },
-  { id: 'delivered',  label: 'Delivered'  },
-  { id: 'cancelled',  label: 'Cancelled'  },
-  { id: 'returned',   label: 'Returned'   },
+  { id: 'all',        label: 'All'               },
+  { id: 'pending',    label: 'New'               },
+  { id: 'processing', label: 'Awaiting Dispatch' },
+  { id: 'dispatched', label: 'Shipped'           },
+  { id: 'delivered',  label: 'Delivered'         },
+  { id: 'cancelled',  label: 'Cancelled'         },
+  { id: 'returned',   label: 'Returned'          },
 ];
 
 const FULFILLMENT_STEPS = ['pending', 'processing', 'dispatched', 'delivered'] as const;
@@ -73,6 +73,12 @@ export default function OrdersPage() {
 
   const filtered = useMemo(() => {
     if (statusTab === 'all') return orders;
+    if (statusTab === 'processing') {
+      return orders.filter(o => {
+        const s = (o.delivery_status || 'pending').toLowerCase();
+        return s === 'processing' || s === 'awaiting_dispatch' || s === 'awaiting dispatch';
+      });
+    }
     return orders.filter(o => (o.delivery_status || 'pending').toLowerCase() === statusTab);
   }, [orders, statusTab]);
 
@@ -82,7 +88,8 @@ export default function OrdersPage() {
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: orders.length };
     orders.forEach(o => {
-      const s = (o.delivery_status || 'pending').toLowerCase();
+      let s = (o.delivery_status || 'pending').toLowerCase();
+      if (s === 'awaiting_dispatch' || s === 'awaiting dispatch') s = 'processing';
       c[s] = (c[s] || 0) + 1;
     });
     return c;

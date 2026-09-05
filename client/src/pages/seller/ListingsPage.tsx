@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, Copy, Download, Edit3,
   ExternalLink, Filter, Layers, Loader2, Package, Plus, RefreshCw,
   Search, Trash2, Upload, X, CheckSquare, Square, Eye, EyeOff,
-  ArrowRight, ArrowLeft, ArrowUpDown, Check, AlertCircle
+  ArrowRight, ArrowLeft, ArrowUpDown, Check, AlertCircle, Minus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -156,6 +156,30 @@ export default function ListingsPage() {
   const [csvLoading,  setCsvLoading]  = useState(false);
   const [csvProgress, setCsvProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Debounced Stock Stepper ──
+  const stockTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [stockUpdating, setStockUpdating] = useState<Record<string, boolean>>({});
+
+  const adjustStock = (product: ProductExtended, delta: number) => {
+    if (!product.id) return;
+    const next = Math.max(0, (product.stock ?? 0) + delta);
+    if (next === product.stock) return;
+    setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock: next } : p));
+    if (stockTimers.current[product.id]) clearTimeout(stockTimers.current[product.id]);
+    setStockUpdating(prev => ({ ...prev, [product.id]: true }));
+    stockTimers.current[product.id] = setTimeout(async () => {
+      try {
+        await updateProductStock(product.id, next);
+        toast.success(`${product.name}: stock → ${next}`);
+      } catch {
+        toast.error('Stock sync failed');
+        loadProducts(true);
+      } finally {
+        setStockUpdating(prev => ({ ...prev, [product.id]: false }));
+      }
+    }, 400);
+  };
 
   // ── Load ──
   const loadProducts = useCallback(async (silent = false) => {
@@ -473,6 +497,23 @@ export default function ListingsPage() {
         </button>
       </div>
 
+      {/* ── Category filtering rail without ugly scrollbar ── */}
+      <div className="mb-4 flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+        {['All', ...VALID_CATEGORIES].map(cat => (
+          <button
+            key={cat}
+            onClick={() => { setCatFilter(cat); setPage(1); }}
+            className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+              catFilter === cat
+                ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
+                : `border ${C.well} ${C.muted} hover:text-white`
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       {/* ── Stats bar ── */}
       {!isLoading && (
         <div className={`mb-3 flex items-center justify-between text-[10px] ${C.muted}`}>
@@ -554,9 +595,31 @@ export default function ListingsPage() {
                           <StatusBadge label={p.status || 'active'} variant={productStatusVariant(p.status || 'active')} />
                         </td>
                         <td className="px-4 py-3">
-                          <div className={`font-mono tabular-nums ${C.text}`}>{p.stock ?? 0}</div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => adjustStock(p, -1)}
+                              disabled={stockUpdating[p.id]}
+                              className={`h-6 w-6 rounded-md border grid place-items-center text-xs transition ${C.well} ${C.muted} hover:border-[#CCFF00] hover:text-[#CCFF00] disabled:opacity-50`}
+                              title="Decrease stock"
+                            >
+                              <Minus size={10} />
+                            </button>
+                            <span className={`w-8 text-center font-mono tabular-nums font-bold ${C.text}`}>
+                              {p.stock ?? 0}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => adjustStock(p, 1)}
+                              disabled={stockUpdating[p.id]}
+                              className={`h-6 w-6 rounded-md border grid place-items-center text-xs transition ${C.well} ${C.muted} hover:border-[#CCFF00] hover:text-[#CCFF00] disabled:opacity-50`}
+                              title="Increase stock"
+                            >
+                              <Plus size={10} />
+                            </button>
+                          </div>
                           {lowStock && (
-                            <div className="text-[9px] font-bold text-amber-400 mt-0.5">Low stock</div>
+                            <div className="text-[9px] font-bold text-amber-400 mt-1">Low stock</div>
                           )}
                         </td>
                         <td className={`px-4 py-3 font-mono tabular-nums ${C.text}`}>{formatINR(p.price)}</td>
@@ -596,7 +659,15 @@ export default function ListingsPage() {
                     <div className="mt-2 flex flex-wrap gap-2 items-center">
                       <StatusBadge label={p.status || 'active'} variant={productStatusVariant(p.status || 'active')} />
                       <span className={`font-mono text-xs tabular-nums font-bold ${C.text}`}>{formatINR(p.price)}</span>
-                      <span className={`text-[10px] ${C.muted}`}>Stock: {p.stock ?? 0}</span>
+                      <div className="flex items-center gap-1.5 rounded-lg border border-[#1F2430] bg-[#12161F] px-2 py-0.5">
+                        <button type="button" onClick={() => adjustStock(p, -1)} disabled={stockUpdating[p.id]} className="text-neutral-400 hover:text-[#CCFF00]">
+                          <Minus size={10} />
+                        </button>
+                        <span className={`font-mono text-xs font-bold ${C.text}`}>{p.stock ?? 0}</span>
+                        <button type="button" onClick={() => adjustStock(p, 1)} disabled={stockUpdating[p.id]} className="text-neutral-400 hover:text-[#CCFF00]">
+                          <Plus size={10} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-1.5">

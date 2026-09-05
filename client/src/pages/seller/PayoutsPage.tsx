@@ -61,7 +61,14 @@ export default function PayoutsPage() {
     const fees    = ledger.filter(e => e.type === 'fee').reduce((a, e) => a + e.amount, 0);
     const refunds = ledger.filter(e => e.type === 'refund').reduce((a, e) => a + Math.abs(e.amount), 0);
     const paid    = payouts.filter(p => p.status === 'paid').reduce((a, p) => a + p.amount, 0);
-    return { sales, fees, refunds, paid, available: sales - fees - refunds - paid };
+    const net     = Math.max(0, sales - fees - refunds - paid);
+    // Escrow is 20% of net or pending clearance reserve
+    const escrow  = Math.round(net * 0.20);
+    const available = Math.max(0, net - escrow);
+    // 8% Flash Marketplace fee calculation on gross sales
+    const standardFee = Math.round(sales * 0.08);
+
+    return { sales, fees, refunds, paid, net, escrow, available, standardFee };
   }, [ledger, payouts]);
 
   const exportPayoutCSV = () => {
@@ -85,6 +92,10 @@ export default function PayoutsPage() {
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
+  const totalBalance = (totals.available + totals.escrow) || 1;
+  const availablePct = Math.round((totals.available / totalBalance) * 100);
+  const escrowPct = 100 - availablePct;
+
   return (
     <SellerShell title="Payouts">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -98,23 +109,73 @@ export default function PayoutsPage() {
         </button>
       </div>
 
-      {/* Balance cards */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: 'Available Balance', value: totals.available, color: 'text-[#CCFF00]', glow: true },
-          { label: 'Total Sales',       value: totals.sales,     color: C.text           },
-          { label: 'Fees & Taxes',      value: totals.fees,      color: 'text-amber-400' },
-          { label: 'Total Refunds',     value: totals.refunds,   color: 'text-red-400'   },
-        ].map(card => (
-          <div key={card.label}
-            className={`rounded-2xl border p-5 ${C.card} ${card.glow ? 'border-[#CCFF00]/20 bg-[#CCFF00]/5' : ''}`}
-          >
-            <div className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>{card.label}</div>
-            <div className={`mt-3 font-mono text-2xl font-semibold tabular-nums ${card.color} ${card.glow ? 'text-shadow-[0_0_20px_rgba(204,255,0,0.4)]' : ''}`}>
-              {formatINR(card.value)}
+      {/* Balance meter & Key Metrics */}
+      <div className="mb-6 grid gap-4 lg:grid-cols-3">
+        {/* Dynamic Available vs. Escrow Balance Meter */}
+        <div className={`lg:col-span-2 rounded-2xl border p-6 ${C.card} border-[#CCFF00]/20`}>
+          <div className="flex items-center justify-between">
+            <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>Settlement Allocation Meter</span>
+            <span className="text-[10px] font-mono font-bold text-[#CCFF00] bg-[#CCFF00]/10 px-2 py-0.5 rounded-full">T+2 Rolling Settlement</span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div>
+              <div className={`text-xs ${C.muted}`}>Available for Transfer</div>
+              <div className="mt-1 font-mono text-2xl sm:text-3xl font-bold text-[#CCFF00] tabular-nums">
+                {formatINR(totals.available)}
+              </div>
+              <div className="text-[11px] text-neutral-400 font-mono mt-0.5">{availablePct}% of cleared capital</div>
+            </div>
+            <div>
+              <div className={`text-xs ${C.muted}`}>Escrow Hold Reserve</div>
+              <div className="mt-1 font-mono text-2xl sm:text-3xl font-bold text-amber-400 tabular-nums">
+                {formatINR(totals.escrow)}
+              </div>
+              <div className="text-[11px] text-neutral-400 font-mono mt-0.5">{escrowPct}% held in delivery audit</div>
             </div>
           </div>
-        ))}
+
+          {/* Visual Gauge Bar */}
+          <div className="mt-5">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-800 flex">
+              <div
+                className="h-full bg-[#CCFF00] transition-all duration-700 shadow-[0_0_12px_rgba(204,255,0,0.5)]"
+                style={{ width: `${availablePct}%` }}
+              />
+              <div
+                className="h-full bg-amber-400 transition-all duration-700"
+                style={{ width: `${escrowPct}%` }}
+              />
+            </div>
+            <div className="mt-2 flex justify-between text-[10px] font-mono text-neutral-400">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#CCFF00]" /> Cleared Available</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" /> Escrow Security (Fulfillment Hold)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 8% Marketplace Transaction Fee Breakdown Card */}
+        <div className={`rounded-2xl border p-6 flex flex-col justify-between ${C.card}`}>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>Marketplace Take Rate</span>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/10 text-white">8.0% Flat</span>
+            </div>
+            <div className="mt-3">
+              <div className={`text-xs ${C.muted}`}>Standard B2B Fee (8%)</div>
+              <div className="mt-1 font-mono text-2xl font-bold text-neutral-200 tabular-nums">
+                {formatINR(totals.standardFee)}
+              </div>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-neutral-400">
+              Covers enterprise buyer escrow, B2B net-terms financing, payment gateway processing, and live GST tax settlement.
+            </p>
+          </div>
+          <div className={`mt-4 pt-3 border-t text-[11px] font-mono flex justify-between ${C.divider}`}>
+            <span className={C.muted}>Lifetime Net Payouts:</span>
+            <span className="font-bold text-white tabular-nums">{formatINR(totals.paid)}</span>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
