@@ -17,6 +17,7 @@ import {
 } from '@/lib/supabase';
 import { SafeImage } from '@/components/SafeImage';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge, orderStatusVariant } from '@/components/seller/StatusBadge';
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
@@ -133,6 +134,7 @@ function productStatusVariant(s: string) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ListingsPage() {
   const { isDark } = useTheme();
+  const { sellerId } = useAuth();
 
   // ── Data ──
   const [products,   setProducts]   = useState<ProductExtended[]>([]);
@@ -189,7 +191,7 @@ export default function ListingsPage() {
     setStockUpdating(prev => ({ ...prev, [product.id]: true }));
     stockTimers.current[product.id] = setTimeout(async () => {
       try {
-        await updateProductStock(product.id, next);
+        await updateProductStock(product.id, next, sellerId);
         toast.success(`${product.name}: stock → ${next}`);
       } catch {
         toast.error('Stock sync failed');
@@ -206,7 +208,7 @@ export default function ListingsPage() {
     setIsRefreshing(true);
     setError(null);
     try {
-      const data = await getExtendedCatalog();
+      const data = await getExtendedCatalog(sellerId);
       setProducts(data);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to load catalog';
@@ -215,16 +217,16 @@ export default function ListingsPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [sellerId]);
 
   useEffect(() => {
     loadProducts();
     const ch = supabase
-      .channel('listings-rt')
+      .channel(`listings-rt-${sellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadProducts(true))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [loadProducts]);
+  }, [loadProducts, sellerId]);
 
   // ── Filtered + sorted + paginated ──
   const filtered = useMemo(() => {
@@ -367,15 +369,15 @@ export default function ListingsPage() {
       };
 
       if (editProduct?.id) {
-        const updated: ProductExtended = { ...editProduct, ...payload };
+        const updated: ProductExtended = { ...editProduct, ...payload, seller_id: sellerId || editProduct.seller_id };
         setProducts(prev => prev.map(p => p.id === editProduct.id ? updated : p));
         setDrawerOpen(false);
-        await updateProductInCatalog(editProduct.id, updated as Parameters<typeof updateProductInCatalog>[1]);
+        await updateProductInCatalog(editProduct.id, updated as Parameters<typeof updateProductInCatalog>[1], sellerId);
         await upsertPriceTiers(editProduct.id, priceTiers);
         toast.success(`"${updated.name}" updated`);
       } else {
         setDrawerOpen(false);
-        const inserted = await insertProductToCatalog(payload);
+        const inserted = await insertProductToCatalog(payload, sellerId);
         if (inserted?.id) {
           await upsertPriceTiers(inserted.id, priceTiers);
           setProducts(prev => [inserted as ProductExtended, ...prev]);
@@ -397,7 +399,7 @@ export default function ListingsPage() {
     setProducts(prev => prev.filter(p => p.id !== deleteTarget.id));
     setDeleteTarget(null);
     try {
-      await deleteProductFromCatalog(deleteTarget.id);
+      await deleteProductFromCatalog(deleteTarget.id, sellerId);
       toast.success(`"${deleteTarget.name}" removed`);
     } catch {
       toast.error('Delete failed');

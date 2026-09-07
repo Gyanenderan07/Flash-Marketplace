@@ -10,6 +10,7 @@ import {
   type OrderExtended, type StatusTimelineEntry
 } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge, orderStatusVariant } from '@/components/seller/StatusBadge';
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
@@ -55,6 +56,7 @@ function formatDate(s: string) {
 
 export default function OrdersPage() {
   const { isDark } = useTheme();
+  const { sellerId } = useAuth();
   const [orders,       setOrders]       = useState<OrderExtended[]>([]);
   const [isLoading,    setIsLoading]    = useState(true);
   const [error,        setError]        = useState<string | null>(null);
@@ -69,19 +71,19 @@ export default function OrdersPage() {
   const load = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
     setError(null);
-    try { setOrders(await getExtendedOrders()); }
+    try { setOrders(await getExtendedOrders(sellerId)); }
     catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed'); }
     finally { setIsLoading(false); }
-  }, []);
+  }, [sellerId]);
 
   useEffect(() => {
     load();
     const ch = supabase
-      .channel('orders-seller-rt')
+      .channel(`orders-seller-rt-${sellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => load(true))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [load]);
+  }, [load, sellerId]);
 
   const filtered = useMemo(() => {
     let list = orders;

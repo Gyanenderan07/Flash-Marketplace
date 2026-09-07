@@ -66,6 +66,7 @@ import {
 } from '@/lib/supabase';
 import { SafeImage } from '@/components/SafeImage';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
 import SellerShell, { resolveBreadcrumbRoute } from './seller/SellerShell';
 
@@ -358,6 +359,7 @@ function ChartTooltip({ active, payload, label }: any) {
 export default function SellerDashboard({ initialTab }: { initialTab?: TabId } = {}) {
   const [location, navigate] = useLocation();
   const { theme, isDark, toggleTheme } = useTheme();
+  const { sellerId } = useAuth();
 
   // ── Tab routing ──
   const getTabFromPath = (path: string): TabId => {
@@ -439,7 +441,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     setIsRefreshing(true);
     try {
       const [prods, ords, kpis] = await Promise.all([
-        getLiveCatalog(), getLiveOrders(), getDashboardMetrics()
+        getLiveCatalog(sellerId), getLiveOrders(sellerId), getDashboardMetrics(sellerId)
       ]);
       setProducts(prods || []);
       setOrders(ords   || []);
@@ -460,19 +462,19 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [sellerId]);
 
   useEffect(() => {
     loadData();
     const channel = supabase
-      .channel('seller-rt')
+      .channel(`seller-rt-${sellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadData(true))
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
       Object.values(stockTimers.current).forEach(clearTimeout);
     };
-  }, [loadData]);
+  }, [loadData, sellerId]);
 
   // ── Tab switch ──
   const switchTab = (id: TabId) => {
@@ -563,10 +565,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           status: 'active',
           moq: Math.max(1, parseInt(formData.moq) || 1),
           low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
+          seller_id: sellerId || editingProduct.seller_id
         };
         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
         setIsDrawerOpen(false);
-        await updateProductInCatalog(editingProduct.id, updated);
+        await updateProductInCatalog(editingProduct.id, updated, sellerId);
         toast.success(`"${updated.name}" updated in live catalog`);
       } else {
         const payload = {
@@ -578,12 +581,13 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           status: 'active',
           moq: Math.max(1, parseInt(formData.moq) || 1),
           low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
+          seller_id: sellerId || undefined
         };
         const tempId = `temp-${Date.now()}`;
         const optimistic: SupabaseProduct = { ...payload, id: tempId, created_at: new Date().toISOString() };
         setProducts(prev => [optimistic, ...prev]);
         setIsDrawerOpen(false);
-        const inserted = await insertProductToCatalog(payload);
+        const inserted = await insertProductToCatalog(payload, sellerId);
         if (inserted?.id) setProducts(prev => prev.map(p => p.id === tempId ? inserted : p));
         toast.success(`"${formData.name.trim()}" published to catalog`);
       }
@@ -607,7 +611,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     setStockUpdating(prev => ({ ...prev, [product.id!]: true }));
     stockTimers.current[product.id] = setTimeout(async () => {
       try {
-        await updateProductStock(product.id!, next);
+        await updateProductStock(product.id!, next, sellerId);
         toast.success(`${product.name}: stock → ${next}`);
       } catch {
         toast.error('Stock sync failed');
@@ -626,7 +630,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     setProducts(prev => prev.filter(p => p.id !== id));
     setProductToDelete(null);
     try {
-      await deleteProductFromCatalog(id);
+      await deleteProductFromCatalog(id, sellerId);
       toast.success(`Removed "${name}" from catalog`);
     } catch {
       toast.error('Delete failed');

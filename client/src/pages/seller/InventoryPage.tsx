@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase';
 import { SafeImage } from '@/components/SafeImage';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
@@ -23,6 +24,7 @@ function formatINR(v: number) {
 
 export default function InventoryPage() {
   const { isDark } = useTheme();
+  const { sellerId } = useAuth();
   const [products,     setProducts]     = useState<ProductExtended[]>([]);
   const [isLoading,    setIsLoading]    = useState(true);
   const [error,        setError]        = useState<string | null>(null);
@@ -38,23 +40,23 @@ export default function InventoryPage() {
     setIsRefreshing(true);
     setError(null);
     try {
-      setProducts(await getExtendedCatalog());
+      setProducts(await getExtendedCatalog(sellerId));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [sellerId]);
 
   useEffect(() => {
     load();
     const ch = supabase
-      .channel('inventory-rt')
+      .channel(`inventory-rt-${sellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => load(true))
       .subscribe();
     return () => { supabase.removeChannel(ch); Object.values(timers.current).forEach(clearTimeout); };
-  }, [load]);
+  }, [load, sellerId]);
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -78,7 +80,7 @@ export default function InventoryPage() {
     setUpdating(prev => ({ ...prev, [product.id]: true }));
     timers.current[product.id] = setTimeout(async () => {
       try {
-        await updateProductStock(product.id, next);
+        await updateProductStock(product.id, next, sellerId);
         toast.success(`${product.name}: stock → ${next}`);
       } catch {
         toast.error('Stock sync failed');

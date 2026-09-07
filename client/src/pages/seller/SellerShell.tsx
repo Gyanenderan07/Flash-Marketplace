@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart3,
   Bell,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -20,6 +21,7 @@ import {
   Shield,
   Sun,
   Truck,
+  User,
   Users,
   Wallet,
   X,
@@ -28,6 +30,7 @@ import {
 import { toast } from 'sonner';
 import { supabase, BUYER_STOREFRONT_URL } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 
 const SPRING_TAB = { type: 'spring', stiffness: 380, damping: 30 } as const;
@@ -166,6 +169,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
   const [bellOpen, setBellOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { theme, isDark, toggleTheme } = useTheme();
+  const { user, storeName, isVerified, signOut } = useAuth();
   const [location, navigate] = useLocation();
 
   // Keyboard dismiss (ESC)
@@ -221,10 +225,14 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
   const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
-  const handleLogout = () => {
-    try { localStorage.removeItem('flash-role'); } catch {}
-    toast.success('Signed out of Seller Central');
-    navigate('/auth/login');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('Signed out of Seller Central');
+      navigate('/auth/login');
+    } catch {
+      navigate('/auth/login');
+    }
   };
 
   // Dynamic automatic breadcrumbs
@@ -549,6 +557,40 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
                   </>
                 )}
               </AnimatePresence>
+            </div>
+
+            {/* Merchant Identity & Sign Out Cluster */}
+            <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 px-3 py-1.5 rounded-full">
+                <div className="h-6 w-6 rounded-full bg-[#CCFF00] text-black font-extrabold text-[11px] grid place-items-center uppercase shrink-0">
+                  {(storeName || user?.email || 'M').charAt(0)}
+                </div>
+                <div className="flex items-center gap-1.5 max-w-[130px] sm:max-w-[170px] truncate">
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                    {storeName || 'Merchant Portal'}
+                  </span>
+                  {isVerified ? (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase text-[#15803D] dark:text-[#CCFF00] bg-emerald-500/10 dark:bg-[#CCFF00]/10 px-1.5 py-0.5 rounded shrink-0">
+                      <CheckCircle2 size={10} className="text-[#15803D] dark:text-[#CCFF00]" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center text-[9px] font-bold text-neutral-400 bg-neutral-500/10 px-1.5 py-0.5 rounded shrink-0">
+                      Standard
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Sign Out Button in Header */}
+              <button
+                onClick={handleLogout}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 hover:border-red-500/30 transition"
+                title="Sign Out"
+              >
+                <LogOut size={13} />
+                <span>SIGN OUT</span>
+              </button>
             </div>
           </div>
         </header>

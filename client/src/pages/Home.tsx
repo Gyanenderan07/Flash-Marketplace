@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { motion } from 'framer-motion';
-import { ExternalLink, ShieldCheck, Store, Zap } from 'lucide-react';
-import { toast } from 'sonner';
+import { ExternalLink, Store } from 'lucide-react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+
+// Auth Views
+import LoginPage from './auth/LoginPage';
+import SignupPage from './auth/SignupPage';
 
 // Seller Central Views
 import SellerDashboardView from './SellerDashboard';
@@ -17,85 +20,6 @@ import HealthPage from './seller/HealthPage';
 import AnalyticsPage from './seller/AnalyticsPage';
 import SettingsPage from './seller/SettingsPage';
 import { BUYER_STOREFRONT_URL } from '@/lib/supabase';
-
-/**
- * Clean enterprise Seller Sign-In view
- */
-function SellerAuth({ signup = false }: { signup?: boolean }) {
-  const [, navigate] = useLocation();
-
-  const handleEnter = () => {
-    try {
-      localStorage.setItem('flash-role', 'seller');
-    } catch {}
-    toast.success('Signed in to Flash Seller Central');
-    navigate('/seller/dashboard');
-  };
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F4F5F7] dark:bg-[#000000] p-4 text-neutral-900 dark:text-white antialiased transition-colors duration-200 selection:bg-[#CCFF00] selection:text-black">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md rounded-3xl border border-neutral-200 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] p-8 shadow-2xl space-y-6"
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#CCFF00] text-black shadow-[0_0_16px_rgba(204,255,0,0.35)]">
-            <Zap size={22} fill="currentColor" />
-          </span>
-          <div className="flex flex-col">
-            <span className="text-lg font-black uppercase tracking-tight">
-              <span className="text-neutral-900 dark:text-white">FLASH </span>
-              <span className="text-[#15803D] dark:text-[#CCFF00] font-black transition-colors">BUSINESS</span>
-            </span>
-            <span className="text-[10px] tracking-widest text-neutral-500 dark:text-neutral-400 font-bold uppercase">
-              SELLER CENTRAL
-            </span>
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-black tracking-tight text-neutral-900 dark:text-white">
-            {signup ? 'Create Merchant Account' : 'Merchant Sign In'}
-          </h2>
-          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-            Access your B2B catalog, wholesale quotes, order fulfillment console, and settlement ledger.
-          </p>
-        </div>
-
-        <div className="space-y-3 pt-2">
-          <motion.button
-            whileHover={{ y: -2, boxShadow: '0 0 20px rgba(204,255,0,0.35)' }}
-            whileTap={{ scale: 0.96 }}
-            onClick={handleEnter}
-            className="w-full rounded-2xl bg-[#CCFF00] py-3.5 text-xs font-black uppercase tracking-widest text-black shadow-[0_0_16px_rgba(204,255,0,0.25)] transition"
-          >
-            Enter Seller Central Hub
-          </motion.button>
-
-          <a
-            href={BUYER_STOREFRONT_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 dark:border-[#1F2430] bg-neutral-100 dark:bg-[#12161F] py-3 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 transition hover:border-[#CCFF00]/40 hover:text-black dark:hover:text-[#CCFF00]"
-          >
-            <Store size={14} />
-            <span>Launch Buyer Storefront</span>
-            <ExternalLink size={12} />
-          </a>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-neutral-200 dark:border-[#1F2430] pt-4 text-[10px] text-neutral-500">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck size={13} className="text-[#CCFF00]" /> 256-bit SSL Verified
-          </span>
-          <span>Flash B2B Enterprise Engine</span>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
 
 /**
  * Consumer Storefront Redirection view
@@ -113,7 +37,7 @@ function BuyerRedirectNotice({ path }: { path: string }) {
             Consumer Shopping Portal
           </h2>
           <p className="mt-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-            This deployment is strictly the <span className="text-[#CCFF00] font-bold">Flash Seller Central Hub</span>. Consumer shopping, retail cart, and buyer checkout are located at the official Buyer Storefront.
+            This deployment is strictly the <span className="text-[#15803D] dark:text-[#CCFF00] font-bold">Flash Business Seller Central</span>. Consumer shopping, retail cart, and buyer checkout are located on the official Buyer Storefront.
           </p>
         </div>
 
@@ -142,29 +66,14 @@ function BuyerRedirectNotice({ path }: { path: string }) {
 
 /**
  * Flash Seller Central — Global Master Router
- * Zero consumer cart bloat. All routes point to seller console modules.
+ * Strictly protected enterprise portal with multi-tenant authentication.
  */
 export default function AppRouter() {
   const [location] = useLocation();
 
-  // Handle all Seller Central Routes
-  if (location === '/' || location === '/seller' || location === '/seller/dashboard') {
-    return <SellerDashboardView />;
-  }
-  if (location === '/seller/listings')   return <ListingsPage />;
-  if (location === '/seller/inventory')  return <InventoryPage />;
-  if (location === '/seller/orders')     return <OrdersPage />;
-  if (location === '/seller/rfq')        return <RFQPage />;
-  if (location === '/seller/analytics')  return <AnalyticsPage />;
-  if (location === '/seller/promotions') return <PromotionsPage />;
-  if (location === '/seller/returns')    return <ReturnsPage />;
-  if (location === '/seller/payouts')    return <PayoutsPage />;
-  if (location === '/seller/health')     return <HealthPage />;
-  if (location === '/seller/settings')   return <SettingsPage />;
-
-  // Auth Routes
-  if (location === '/auth/login')  return <SellerAuth />;
-  if (location === '/auth/signup') return <SellerAuth signup />;
+  // Public Auth Routes
+  if (location === '/auth/login')  return <LoginPage />;
+  if (location === '/auth/signup') return <SignupPage />;
 
   // Redirect any legacy buyer/cart URLs
   if (
@@ -177,6 +86,42 @@ export default function AppRouter() {
     return <BuyerRedirectNotice path={location} />;
   }
 
-  // Fallback to Seller Dashboard
-  return <SellerDashboardView />;
+  // Protected Seller Central Routes
+  if (location === '/seller/listings') {
+    return <ProtectedRoute><ListingsPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/inventory') {
+    return <ProtectedRoute><InventoryPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/orders') {
+    return <ProtectedRoute><OrdersPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/rfq') {
+    return <ProtectedRoute><RFQPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/analytics') {
+    return <ProtectedRoute><AnalyticsPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/promotions') {
+    return <ProtectedRoute><PromotionsPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/returns') {
+    return <ProtectedRoute><ReturnsPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/payouts') {
+    return <ProtectedRoute><PayoutsPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/health') {
+    return <ProtectedRoute><HealthPage /></ProtectedRoute>;
+  }
+  if (location === '/seller/settings') {
+    return <ProtectedRoute><SettingsPage /></ProtectedRoute>;
+  }
+
+  // Default protected root dashboard (/ or /seller or /seller/dashboard)
+  return (
+    <ProtectedRoute>
+      <SellerDashboardView />
+    </ProtectedRoute>
+  );
 }
