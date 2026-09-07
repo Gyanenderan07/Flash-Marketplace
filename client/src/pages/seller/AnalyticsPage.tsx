@@ -353,10 +353,10 @@ export default function AnalyticsPage() {
               </span>
             </div>
             <div className={`mt-4 text-2xl sm:text-3xl ${C.text}`}>
-              <AnimatedCounter value={totalStockUnits} suffix=" Units" />
+              <AnimatedCounter value={products.filter(p => (p.status || 'active') === 'active').length} suffix=" Active SKUs" />
             </div>
             <p className={`mt-1 text-[11px] ${C.muted}`}>
-              Across {products.length} live catalog listings synced to buyer portal.
+              {totalStockUnits.toLocaleString('en-IN')} total units across {products.length} live catalog items.
             </p>
           </div>
 

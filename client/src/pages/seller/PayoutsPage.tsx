@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Download, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPayouts, getLedgerEntries, type Payout, type LedgerEntry } from '@/lib/supabase';
+import {
+  supabase, getPayouts, getLedgerEntries, getExtendedOrders,
+  type Payout, type LedgerEntry, type OrderExtended
+} from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
@@ -20,7 +23,7 @@ function formatDate(s: string) {
 }
 
 function payoutVariant(status: string) {
-  if (status === 'paid')   return 'success' as const;
+  if (status === 'paid' || status === 'completed') return 'success' as const;
   if (status === 'failed') return 'danger'  as const;
   return 'warning' as const;
 }
@@ -33,43 +36,62 @@ export default function PayoutsPage() {
   const { isDark } = useTheme();
   const [payouts,      setPayouts]      = useState<Payout[]>([]);
   const [ledger,       setLedger]       = useState<LedgerEntry[]>([]);
+  const [orders,       setOrders]       = useState<OrderExtended[]>([]);
   const [isLoading,    setIsLoading]    = useState(true);
   const [error,        setError]        = useState<string | null>(null);
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [activeTab,    setActiveTab]    = useState<'payouts' | 'ledger'>('ledger');
 
-  const load = useCallback(async () => {
-    setIsLoading(true); setError(null);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    setError(null);
     try {
-      const [p, l] = await Promise.all([getPayouts(), getLedgerEntries()]);
-      setPayouts(p); setLedger(l);
+      const [p, l, o] = await Promise.all([getPayouts(), getLedgerEntries(), getExtendedOrders()]);
+      setPayouts(p || []);
+      setLedger(l || []);
+      setOrders(o || []);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed');
+      setError(e instanceof Error ? e.message : 'Failed to load payouts');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel('payouts-ledger-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payouts' }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ledger_entries' }, () => load(true))
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [load]);
 
   const filteredLedger = useMemo(() =>
     ledgerFilter === 'all' ? ledger : ledger.filter(e => e.type === ledgerFilter)
   , [ledger, ledgerFilter]);
 
   const totals = useMemo(() => {
-    const sales   = ledger.filter(e => e.type === 'sale').reduce((a, e) => a + e.amount, 0);
-    const fees    = ledger.filter(e => e.type === 'fee').reduce((a, e) => a + e.amount, 0);
-    const refunds = ledger.filter(e => e.type === 'refund').reduce((a, e) => a + Math.abs(e.amount), 0);
-    const paid    = payouts.filter(p => p.status === 'paid').reduce((a, p) => a + p.amount, 0);
-    const net     = Math.max(0, sales - fees - refunds - paid);
-    // Escrow is 20% of net or pending clearance reserve
-    const escrow  = Math.round(net * 0.20);
-    const available = Math.max(0, net - escrow);
-    // 8% Flash Marketplace fee calculation on gross sales
-    const standardFee = Math.round(sales * 0.08);
+    const rawSales = ledger.filter(e => e.type === 'sale').reduce((a, e) => a + e.amount, 0);
+    // If ledger has no sales yet, derive sales from completed orders
+    const orderSales = orders.reduce((a, o) => a + (Number(o.total_amount) || 0), 0);
+    const sales = rawSales > 0 ? rawSales : orderSales;
 
-    return { sales, fees, refunds, paid, net, escrow, available, standardFee };
-  }, [ledger, payouts]);
+    const fees = ledger.filter(e => e.type === 'fee').reduce((a, e) => a + e.amount, 0);
+    const refunds = ledger.filter(e => e.type === 'refund').reduce((a, e) => a + Math.abs(e.amount), 0);
+    const paid = payouts
+      .filter(p => p.status === 'paid' || (p.status as string) === 'completed')
+      .reduce((a, p) => a + Number(p.amount || 0), 0);
+    const standardFee = fees > 0 ? fees : Math.round(sales * 0.08);
+    const net = Math.max(0, sales - standardFee - refunds - paid);
+    // Escrow is 20% of net or pending clearance reserve
+    const escrow = Math.round(net * 0.20);
+    const available = Math.max(0, net - escrow);
+
+    return { sales, fees: standardFee, refunds, paid, net, escrow, available, standardFee };
+  }, [ledger, payouts, orders]);
 
   const exportPayoutCSV = () => {
     const csv = [

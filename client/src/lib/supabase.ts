@@ -64,6 +64,14 @@ export interface SupabaseProduct {
   hover_images?: string[];
   colors?: Array<{ name: string; hex: string }>;
   created_at?: string;
+  seller_id?: string | null;
+  sku?: string | null;
+  moq?: number;
+  status?: string;
+  low_stock_threshold?: number;
+  tiered_pricing?: Array<{ minQty: number; price: number }> | null;
+  shipping?: Record<string, unknown> | null;
+  certifications?: Record<string, string> | null;
 }
 
 export interface SupabaseOrder {
@@ -73,7 +81,7 @@ export interface SupabaseOrder {
   customer_name?: string;
   customer_email?: string;
   payment_status?: string;
-  items?: any;
+  items?: unknown;
   created_at?: string;
 }
 
@@ -213,8 +221,9 @@ export async function getDashboardMetrics(): Promise<{
 
 /**
  * Inserts a new product directly into the shared Supabase products table
+ * Enforces status: 'active' by default and auto-generates SKU if omitted.
  */
-export async function insertProductToCatalog(product: Omit<SupabaseProduct, "id" | "created_at">) {
+export async function insertProductToCatalog(product: Partial<SupabaseProduct> & { name: string; price: number }) {
   const price = Number(product.price);
   const origPrice = Number(product.original_price || product.price);
   const discountVal =
@@ -229,21 +238,37 @@ export async function insertProductToCatalog(product: Omit<SupabaseProduct, "id"
     .replace(/\s+/g, "-");
 
   const primaryImg =
-    product.primary_image.trim() ||
+    (product.primary_image || "").trim() ||
     "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80";
+
+  const hoverImgs = (product.hover_images && product.hover_images.length > 0)
+    ? product.hover_images.filter(Boolean)
+    : [primaryImg];
+
+  // Auto-generate SKU fallback if empty
+  const skuVal = (product.sku || "").trim() || `FL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
   const payload = {
     name: product.name.trim(),
-    brand: product.brand.trim() || "Flash",
+    brand: (product.brand || "Flash Verified").trim(),
     category: catFormatted,
     price: price,
     original_price: origPrice,
     discount: discountVal,
     stock: Number(product.stock ?? 10),
-    description: product.description.trim() || "Flash verified product.",
+    description: (product.description || "Flash verified wholesale product.").trim(),
     primary_image: primaryImg,
-    hover_images: product.hover_images?.length ? product.hover_images : [primaryImg],
+    hover_images: hoverImgs,
     colors: product.colors?.length ? product.colors : [{ name: "Obsidian", hex: "#0F1115" }],
+    // Extended migration columns with enterprise defaults
+    sku: skuVal,
+    status: product.status || 'active',
+    moq: Math.max(1, Number(product.moq ?? 1)),
+    low_stock_threshold: Math.max(0, Number(product.low_stock_threshold ?? 5)),
+    tiered_pricing: product.tiered_pricing || null,
+    seller_id: product.seller_id || '00000000-0000-0000-0000-000000000001',
+    shipping: product.shipping || null,
+    certifications: product.certifications || null,
   };
 
   const { data, error } = await supabase.from("products").insert([payload]).select();
@@ -257,7 +282,7 @@ export async function insertProductToCatalog(product: Omit<SupabaseProduct, "id"
  * Updates an existing product in Supabase
  */
 export async function updateProductInCatalog(id: string, product: Partial<SupabaseProduct>) {
-  const payload: Record<string, any> = { ...product };
+  const payload: Record<string, unknown> = { ...product };
 
   if (product.price !== undefined || product.original_price !== undefined) {
     const orig = Number(product.original_price || product.price || 0);
@@ -275,6 +300,33 @@ export async function updateProductInCatalog(id: string, product: Partial<Supaba
       .toLowerCase()
       .replace(/ & /g, "-")
       .replace(/\s+/g, "-");
+  }
+
+  if (product.primary_image) {
+    payload.primary_image = product.primary_image.trim();
+    if (!product.hover_images || product.hover_images.length === 0) {
+      payload.hover_images = [product.primary_image.trim()];
+    }
+  }
+
+  if (product.hover_images && product.hover_images.length > 0) {
+    payload.hover_images = product.hover_images.filter(Boolean);
+  }
+
+  if (product.moq !== undefined) {
+    payload.moq = Math.max(1, Number(product.moq));
+  }
+
+  if (product.low_stock_threshold !== undefined) {
+    payload.low_stock_threshold = Math.max(0, Number(product.low_stock_threshold));
+  }
+
+  if (product.tiered_pricing !== undefined) {
+    payload.tiered_pricing = product.tiered_pricing;
+  }
+
+  if (product.status) {
+    payload.status = product.status;
   }
 
   const { data, error } = await supabase.from("products").update(payload).eq("id", id).select();

@@ -401,7 +401,8 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
   const EMPTY_FORM = {
     name: '', brand: 'Flash Verified', category: 'Electronics' as ValidCategory,
     sku: generateSKU(), price: '', original_price: '', stock: '10',
-    description: '', primary_image: ''
+    moq: '1', low_stock_threshold: '5', status: 'active',
+    description: '', primary_image: '', hover_images: ''
   };
   const [formData,   setFormData]   = useState(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -428,8 +429,8 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
         grossRevenue:  liveRev,
         pendingOrders: livePending,
         totalOrders:   ords?.length || 0,
-        skuCount:      prods?.length || 0,
-        healthIndex:   Math.min(100, Math.max(90, 100 - livePending * 2)),
+        skuCount:      prods?.length || kpis.skuCount,
+        healthIndex:   kpis.healthIndex || 98,
       });
     } catch (err) {
       console.error('Data load error:', err);
@@ -463,7 +464,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
   // ── Drawer open ──
   const openAddDrawer = () => {
     setEditingProduct(null);
-    setFormData({ ...EMPTY_FORM, sku: generateSKU() });
+    setFormData({ ...EMPTY_FORM, sku: generateSKU(), status: 'active' });
     setFormErrors({});
     setDrawerStep(1);
     setIsDrawerOpen(true);
@@ -525,12 +526,21 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       const img = formData.primary_image.trim() ||
         'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80';
 
+      const extraImgs = formData.hover_images
+        ? formData.hover_images.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+        : [];
+      const hoverImgs = Array.from(new Set([img, ...extraImgs]));
+
       if (editingProduct?.id) {
         const updated: SupabaseProduct = {
-          ...editingProduct, name: formData.name.trim(), brand: formData.brand.trim() || 'Flash',
+          ...editingProduct, name: formData.name.trim(), brand: formData.brand.trim() || 'Flash Verified',
           category: formData.category, price: priceVal, original_price: origVal,
-          stock: stockVal, description: formData.description.trim() || 'Flash verified product.',
-          primary_image: img, hover_images: [img]
+          stock: stockVal, description: formData.description.trim() || 'Flash verified wholesale product.',
+          primary_image: img, hover_images: hoverImgs,
+          sku: formData.sku?.trim() || generateSKU(),
+          status: 'active',
+          moq: Math.max(1, parseInt(formData.moq) || 1),
+          low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
         };
         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
         setIsDrawerOpen(false);
@@ -541,7 +551,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           name: formData.name.trim(), brand: formData.brand.trim() || 'Flash Verified',
           category: formData.category, price: priceVal, original_price: origVal,
           stock: stockVal, description: formData.description.trim() || 'Flash verified wholesale product.',
-          primary_image: img, hover_images: [img], colors: [{ name: 'Obsidian', hex: '#0F1115' }]
+          primary_image: img, hover_images: hoverImgs, colors: [{ name: 'Obsidian', hex: '#0F1115' }],
+          sku: formData.sku?.trim() || generateSKU(),
+          status: 'active',
+          moq: Math.max(1, parseInt(formData.moq) || 1),
+          low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
         };
         const tempId = `temp-${Date.now()}`;
         const optimistic: SupabaseProduct = { ...payload, id: tempId, created_at: new Date().toISOString() };
@@ -552,8 +566,9 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
         toast.success(`"${formData.name.trim()}" published to catalog`);
       }
       loadData(true);
-    } catch (err: any) {
-      toast.error(`Save failed: ${err?.message || 'Unknown error'}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Save failed: ${msg}`);
       loadData(true);
     } finally {
       setIsSubmitting(false);
@@ -1522,15 +1537,33 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                         </motion.div>
                       )}
 
+                      <div className="grid gap-4 grid-cols-2">
+                        <div>
+                          <label className={`block text-[10px] font-black uppercase tracking-wider mb-1.5 ${C.label}`}>
+                            Initial Stock Units <span className="text-[#CCFF00]">*</span>
+                          </label>
+                          <input type="number" placeholder="50"
+                            value={formData.stock}
+                            onChange={e => { setFormData(d => ({ ...d, stock: e.target.value })); setFormErrors(er => ({ ...er, stock: '' })); }}
+                            className={`w-full rounded-xl border px-4 py-3 text-xs font-mono outline-none transition ${C.input} ${formErrors.stock ? 'border-red-500' : ''}`} />
+                          {formErrors.stock && <span className="text-[10px] text-red-400 mt-1 block">{formErrors.stock}</span>}
+                        </div>
+                        <div>
+                          <label className={`block text-[10px] font-black uppercase tracking-wider mb-1.5 ${C.label}`}>MOQ (Min. Order)</label>
+                          <input type="number" placeholder="1"
+                            value={formData.moq}
+                            onChange={e => setFormData(d => ({ ...d, moq: e.target.value }))}
+                            className={`w-full rounded-xl border px-4 py-3 text-xs font-mono outline-none transition ${C.input}`} />
+                        </div>
+                      </div>
+
                       <div>
-                        <label className={`block text-[10px] font-black uppercase tracking-wider mb-1.5 ${C.label}`}>
-                          Initial Stock Units <span className="text-[#CCFF00]">*</span>
-                        </label>
-                        <input type="number" placeholder="50"
-                          value={formData.stock}
-                          onChange={e => { setFormData(d => ({ ...d, stock: e.target.value })); setFormErrors(er => ({ ...er, stock: '' })); }}
-                          className={`w-full rounded-xl border px-4 py-3 text-xs font-mono outline-none transition ${C.input} ${formErrors.stock ? 'border-red-500' : ''}`} />
-                        {formErrors.stock && <span className="text-[10px] text-red-400 mt-1 block">{formErrors.stock}</span>}
+                        <label className={`block text-[10px] font-black uppercase tracking-wider mb-1.5 ${C.label}`}>Low Stock Alert Threshold (Units)</label>
+                        <input type="number" placeholder="5"
+                          value={formData.low_stock_threshold}
+                          onChange={e => setFormData(d => ({ ...d, low_stock_threshold: e.target.value }))}
+                          className={`w-full rounded-xl border px-4 py-3 text-xs font-mono outline-none transition ${C.input}`} />
+                        <span className={`mt-1 block text-[10px] ${C.subtle}`}>Triggers warning badge when inventory drops to or below this count.</span>
                       </div>
                     </motion.div>
                   )}
@@ -1556,6 +1589,14 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                             <span className={`text-[10px] ${C.subtle}`}>Paste an image URL above to preview</span>
                           </div>
                         )}
+                      </div>
+
+                      <div>
+                        <label className={`block text-[10px] font-black uppercase tracking-wider mb-1.5 ${C.label}`}>Secondary / Hover Images (one URL per line)</label>
+                        <textarea rows={2} placeholder="https://images.unsplash.com/photo-1...&#10;https://images.unsplash.com/photo-2..."
+                          value={formData.hover_images}
+                          onChange={e => setFormData(d => ({ ...d, hover_images: e.target.value }))}
+                          className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition resize-none font-mono ${C.input}`} />
                       </div>
 
                       <div>

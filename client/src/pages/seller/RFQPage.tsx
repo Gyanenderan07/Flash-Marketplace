@@ -65,16 +65,18 @@ export default function RFQPage() {
         message: replyMsg.trim() || (action === 'declined' ? 'We are unable to fulfil this request.' : `Quoted: ₹${replyPrice} · Lead time: ${replyLead}`),
         timestamp: new Date().toISOString(),
       };
-      const thread = [...(selected.thread || []), newMsg];
-      const patch: Partial<QuoteType> = {
+      const existingThread = selected.thread || (selected as unknown as { history?: QuoteThreadMessage[] }).history || [];
+      const thread = [...existingThread, newMsg];
+      const patch = {
         status: action,
         thread,
+        history: thread,
         ...(action === 'responded' && {
           seller_price: replyPrice ? parseFloat(replyPrice) : null,
           seller_lead_time: replyLead || null,
         })
       };
-      const updated = await respondToQuote(selected.id, patch);
+      const updated = await respondToQuote(selected.id, patch as Partial<QuoteType>);
       if (updated) {
         setQuotes(prev => prev.map(q => q.id === updated.id ? updated : q));
         setSelected(updated);
@@ -211,10 +213,10 @@ export default function RFQPage() {
 
               {/* Thread */}
               <div className="flex-1 overflow-y-auto scrollbar-thin px-5 py-4 space-y-3">
-                {(selected.thread || []).length === 0 && (
+                {((selected.thread || (selected as unknown as { history?: QuoteThreadMessage[] }).history || [])).length === 0 && (
                   <div className={`text-center text-xs py-8 ${C.muted}`}>No conversation yet</div>
                 )}
-                {(selected.thread || []).map((msg, i) => (
+                {((selected.thread || (selected as unknown as { history?: QuoteThreadMessage[] }).history || [])).map((msg, i) => (
                   <div key={i} className={`flex ${msg.sender === 'seller' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                       msg.sender === 'seller'

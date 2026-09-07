@@ -8,6 +8,8 @@ export type ProductStatus = 'draft' | 'active' | 'suppressed' | 'archived';
 export interface TieredPrice {
   minQty: number;
   price: number;
+  min_qty?: number;
+  unit_price?: number;
 }
 
 export interface ProductShipping {
@@ -114,6 +116,24 @@ export interface DbLedgerEntry {
   type: 'sale' | 'fee' | 'refund' | 'tax';
   amount: number;
   created_at: string;
+}
+
+export interface DbProductPriceTier {
+  id: string;
+  product_id: string;
+  seller_id: string;
+  min_qty: number;
+  unit_price: number;
+}
+
+export interface DbProductVariant {
+  id: string;
+  product_id: string;
+  seller_id: string;
+  variant_name: string | null;
+  sku: string | null;
+  stock: number;
+  price_override: number | null;
 }
 
 export interface DbOrderLineItem {

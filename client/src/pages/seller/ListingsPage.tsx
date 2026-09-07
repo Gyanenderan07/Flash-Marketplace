@@ -59,7 +59,7 @@ interface FormData {
   name: string; brand: string; category: ValidCategory;
   sku: string; status: ProductStatus; moq: string;
   price: string; original_price: string; stock: string; low_stock_threshold: string;
-  description: string; primary_image: string;
+  description: string; primary_image: string; hover_images: string;
   weight: string; dims: string; handlingDays: string;
   certifications: string;
 }
@@ -67,7 +67,7 @@ interface FormData {
 const EMPTY_FORM: FormData = {
   name: '', brand: 'Flash Verified', category: 'Electronics', sku: '',
   status: 'active', moq: '1', price: '', original_price: '', stock: '10',
-  low_stock_threshold: '5', description: '', primary_image: '',
+  low_stock_threshold: '5', description: '', primary_image: '', hover_images: '',
   weight: '', dims: '', handlingDays: '2', certifications: '',
 };
 
@@ -260,6 +260,7 @@ export default function ListingsPage() {
 
   const openEdit = async (p: ProductExtended) => {
     setEditProduct(p);
+    const secondaryImgs = p.hover_images ? p.hover_images.filter(h => h !== p.primary_image).join('\n') : '';
     setFormData({
       name: p.name, brand: p.brand || 'Flash Verified',
       category: (VALID_CATEGORIES.includes(p.category as ValidCategory) ? p.category : 'Electronics') as ValidCategory,
@@ -267,6 +268,7 @@ export default function ListingsPage() {
       moq: String(p.moq || 1), price: String(p.price), original_price: String(p.original_price || p.price),
       stock: String(p.stock ?? 10), low_stock_threshold: String(p.low_stock_threshold || 5),
       description: p.description || '', primary_image: p.primary_image || '',
+      hover_images: secondaryImgs,
       weight: String(p.shipping?.weight || ''), dims: p.shipping?.dims || '',
       handlingDays: String(p.shipping?.handlingDays || 2),
       certifications: p.certifications ? JSON.stringify(p.certifications) : '',
@@ -275,8 +277,13 @@ export default function ListingsPage() {
     setDrawerTab('basic');
     setDrawerOpen(true);
     // Load tiers + variants async
-    const [t, v] = await Promise.all([getPriceTiers(p.id), getVariants(p.id)]);
-    setPriceTiers(t.map(({ min_qty, unit_price }) => ({ min_qty, unit_price })));
+    if (p.tiered_pricing && p.tiered_pricing.length > 0) {
+      setPriceTiers(p.tiered_pricing.map(t => ({ min_qty: t.minQty || 1, unit_price: t.price || p.price })));
+    } else {
+      const t = await getPriceTiers(p.id);
+      setPriceTiers(t.map(({ min_qty, unit_price }) => ({ min_qty, unit_price })));
+    }
+    const v = await getVariants(p.id);
     setVariants(v.map(({ variant_name, sku, stock, price_override }) => ({
       variant_name: variant_name || '', sku: sku || '', stock, price_override
     })));
@@ -299,13 +306,27 @@ export default function ListingsPage() {
       const price  = parseFloat(formData.price);
       const orig   = formData.original_price ? parseFloat(formData.original_price) : price;
       const stock  = parseInt(formData.stock) || 0;
-      const img    = formData.primary_image || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80';
+      const img    = formData.primary_image.trim() || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80';
+      const extraImgs = formData.hover_images
+        ? formData.hover_images.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+        : [];
+      const hoverImgs = Array.from(new Set([img, ...extraImgs]));
+
+      const tieredPricingData = priceTiers.length
+        ? priceTiers.map(t => ({ minQty: t.min_qty, price: t.unit_price }))
+        : null;
+
       const payload = {
-        name: formData.name.trim(), brand: formData.brand.trim(),
+        name: formData.name.trim(), brand: formData.brand.trim() || 'Flash Verified',
         category: formData.category, price, original_price: orig, stock,
-        description: formData.description.trim(), primary_image: img,
-        sku: formData.sku, status: formData.status, moq: parseInt(formData.moq) || 1,
-        low_stock_threshold: parseInt(formData.low_stock_threshold) || 5,
+        description: formData.description.trim() || 'Flash verified wholesale product.',
+        primary_image: img,
+        hover_images: hoverImgs,
+        sku: formData.sku.trim() || generateSKU(),
+        status: formData.status || 'active',
+        moq: Math.max(1, parseInt(formData.moq) || 1),
+        low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
+        tiered_pricing: tieredPricingData,
         shipping: {
           weight: parseFloat(formData.weight) || null,
           dims: formData.dims || null,
@@ -803,9 +824,29 @@ export default function ListingsPage() {
                       ) : (
                         <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed py-10 gap-2 ${C.card}`}>
                           <Package size={24} className={C.muted} />
-                          <span className={`text-xs ${C.muted}`}>Paste an image URL above to preview</span>
+                          <span className={`text-xs ${C.muted}`}>Paste a primary image URL above to preview</span>
                         </div>
                       )}
+
+                      <div>
+                        <label className={`block text-[10px] font-black uppercase tracking-wider mb-1.5 ${C.label}`}>
+                          Secondary &amp; Hover Images (one URL per line)
+                        </label>
+                        <textarea
+                          rows={3}
+                          placeholder="https://images.unsplash.com/photo-1...&#10;https://images.unsplash.com/photo-2..."
+                          value={formData.hover_images}
+                          onChange={e => setFormData(d => ({ ...d, hover_images: e.target.value }))}
+                          className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none resize-none transition font-mono ${
+                            isDark
+                              ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600'
+                              : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00] placeholder:text-gray-400'
+                          }`}
+                        />
+                        <span className={`mt-1 block text-[10px] ${C.muted}`}>
+                          These URLs populate `hover_images` array for interactive hover previews on the buyer storefront.
+                        </span>
+                      </div>
                     </motion.div>
                   )}
 
