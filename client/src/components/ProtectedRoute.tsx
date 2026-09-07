@@ -16,21 +16,21 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen w-screen items-center justify-center bg-[#000000] text-white">
+      <div className="flex min-h-screen w-screen items-center justify-center bg-[#F8F9FA] dark:bg-[#000000] text-neutral-900 dark:text-white transition-colors duration-200">
         <div className="flex flex-col items-center gap-4">
           <motion.div
-            animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
+            animate={{ scale: [1, 1.15, 1], opacity: [0.8, 1, 0.8] }}
             transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
             className="grid h-16 w-16 place-items-center rounded-2xl bg-[#CCFF00] text-black shadow-[0_0_30px_rgba(204,255,0,0.5)]"
           >
             <Zap size={32} fill="currentColor" />
           </motion.div>
           <div className="flex flex-col items-center">
-            <div className="text-xs font-black uppercase tracking-widest text-[#CCFF00]">
-              Flash Business
+            <div className="text-xs font-black uppercase tracking-widest text-[#15803D] dark:text-[#CCFF00]">
+              FLASH BUSINESS
             </div>
-            <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-              Verifying Tenant Session…
+            <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              Verifying Merchant Session…
             </div>
           </div>
         </div>

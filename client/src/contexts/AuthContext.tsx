@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchSellerProfile]);
 
-  // Sign Up & Merchant Onboarding via Supabase Auth
+  // Sign Up & Merchant Onboarding via Supabase Auth (does not auto-login)
   const signUp = useCallback(async (
     businessName: string,
     storeName: string,
@@ -187,9 +187,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const bName = businessName.trim() || 'Flash Enterprise Merchant';
       const sName = storeName.trim() || bName;
+      const cleanEmail = email.trim().toLowerCase();
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: cleanEmail,
         password,
         options: {
           data: {
@@ -204,11 +205,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: authError };
       }
 
-      if (authData.user) {
-        setUser(authData.user);
-        setSession(authData.session);
+      // If user is returned with empty identities, Supabase returns this when email already exists and confirm email is enabled
+      if (authData.user && Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+        setIsLoading(false);
+        return {
+          error: new Error('An account with this email already exists. Please sign in.')
+        };
+      }
 
-        // Explicitly insert into public.sellers
+      if (authData.user) {
+        // Explicitly insert into public.sellers linked to auth user ID
         const sellerPayload: Record<string, unknown> = {
           id: authData.user.id,
           auth_user_id: authData.user.id,
@@ -223,21 +229,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           let res = await supabase.from('sellers').insert([sellerPayload]).select().maybeSingle();
           if (res.error && res.error.message?.includes('store_name')) {
             delete sellerPayload.store_name;
-            res = await supabase.from('sellers').insert([sellerPayload]).select().maybeSingle();
-          }
-          if (res.data) {
-            setSellerProfile(res.data as Seller);
+            await supabase.from('sellers').insert([sellerPayload]).select().maybeSingle();
           }
         } catch (e) {
-          console.warn('Non-fatal seller table insert note:', e);
+          console.warn('Seller table profile creation note:', e);
         }
+
+        // ENFORCE LOGIN REDIRECT AFTER SIGNUP:
+        // Supabase Auth auto-creates a session if email confirmation is disabled.
+        // We terminate the session immediately so the merchant must explicitly log in.
+        try {
+          await supabase.auth.signOut();
+        } catch {}
+
+        setUser(null);
+        setSession(null);
+        setSellerProfile(null);
       }
 
       setIsLoading(false);
       return { error: null };
     } catch (err) {
       setIsLoading(false);
-      return { error: err instanceof Error ? err : new Error('Signup failed') };
+      return { error: err instanceof Error ? err : new Error('Registration failed') };
     }
   }, []);
 
