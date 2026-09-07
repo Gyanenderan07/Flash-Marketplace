@@ -26,6 +26,7 @@ import {
   Minus,
   Moon,
   Package,
+  PackageCheck,
   Plus,
   Quote,
   RefreshCw,
