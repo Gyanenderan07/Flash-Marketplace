@@ -252,7 +252,7 @@ export default function AnalyticsPage() {
     >
       <div className="space-y-7">
         {/* ── HEADER & RANGE CONTROLS ── */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#1F2430] pb-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 dark:border-[#1F2430] pb-5">
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse" />
@@ -275,7 +275,7 @@ export default function AnalyticsPage() {
                   className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
                     range === r
                       ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.35)]'
-                      : `${C.muted} hover:text-white`
+                      : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
                   }`}
                 >
                   {r === 'all' ? 'All-Time' : `${r}D`}
@@ -491,7 +491,7 @@ export default function AnalyticsPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className={`border-b border-[#1F2430] text-[9px] font-black uppercase tracking-widest ${C.muted}`}>
+                <thead className={`border-b border-neutral-200 dark:border-[#1F2430] text-[9px] font-black uppercase tracking-widest ${C.muted}`}>
                   <tr>
                     <th className="pb-3">SKU &amp; Product</th>
                     <th className="pb-3">Category</th>
@@ -500,22 +500,22 @@ export default function AnalyticsPage() {
                     <th className="pb-3 text-right">Quick Restock</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1F2430]/60">
+                <tbody className="divide-y divide-neutral-100 dark:divide-[#1F2430]/60">
                   {depletionItems.slice(0, 8).map(item => {
                     const pct = Math.min(100, Math.round(((item.stock ?? 0) / (item.low_stock_threshold || 5)) * 100));
                     const isCritical = (item.stock ?? 0) === 0;
 
                     return (
-                      <tr key={item.id} className="hover:bg-white/[0.02] transition">
+                      <tr key={item.id} className="hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition">
                         <td className="py-3">
                           <div className={`font-bold ${C.text}`}>{item.name}</div>
                           <div className="text-[10px] font-mono text-neutral-500">{item.sku || 'No SKU'}</div>
                         </td>
-                        <td className="py-3 text-neutral-400">{item.category}</td>
-                        <td className="py-3 font-mono font-bold">{formatINR(item.price)}</td>
+                        <td className="py-3 text-neutral-600 dark:text-neutral-400">{item.category}</td>
+                        <td className="py-3 font-mono font-bold text-neutral-900 dark:text-white">{formatINR(item.price)}</td>
                         <td className="py-3 w-48">
                           <div className="flex items-center gap-2">
-                            <div className="h-2 flex-1 rounded-full bg-neutral-800 overflow-hidden">
+                            <div className="h-2 flex-1 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all duration-300 ${
                                   isCritical ? 'bg-red-500' : 'bg-amber-400'

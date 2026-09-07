@@ -33,12 +33,12 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#000000] p-4 text-white antialiased selection:bg-[#CCFF00] selection:text-black">
+    <div className="flex min-h-screen items-center justify-center bg-[#F4F5F7] dark:bg-[#000000] p-4 text-neutral-900 dark:text-white antialiased transition-colors duration-200 selection:bg-[#CCFF00] selection:text-black">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full max-w-md rounded-3xl border border-[#1F2430] bg-[#0D1117] p-8 shadow-2xl space-y-6"
+        className="w-full max-w-md rounded-3xl border border-neutral-200 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] p-8 shadow-2xl space-y-6"
       >
         <div className="flex items-center gap-2.5">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#CCFF00] text-black shadow-[0_0_16px_rgba(204,255,0,0.35)]">
@@ -46,20 +46,20 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
           </span>
           <div className="flex flex-col">
             <span className="text-lg font-black uppercase tracking-tight">
-              <span className="text-[#FFFFFF]">FLASH </span>
-              <span className="text-[#CCFF00]">BUSINESS</span>
+              <span className="text-neutral-900 dark:text-white">FLASH </span>
+              <span className="text-[#CCFF00] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] dark:drop-shadow-none">BUSINESS</span>
             </span>
-            <span className="text-[10px] tracking-widest text-neutral-400 font-bold uppercase">
+            <span className="text-[10px] tracking-widest text-neutral-500 dark:text-neutral-400 font-bold uppercase">
               SELLER CENTRAL
             </span>
           </div>
         </div>
 
         <div>
-          <h2 className="text-xl font-black tracking-tight text-white">
+          <h2 className="text-xl font-black tracking-tight text-neutral-900 dark:text-white">
             {signup ? 'Create Merchant Account' : 'Merchant Sign In'}
           </h2>
-          <p className="mt-1 text-xs text-neutral-400">
+          <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
             Access your B2B catalog, wholesale quotes, order fulfillment console, and settlement ledger.
           </p>
         </div>
@@ -78,7 +78,7 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
             href={BUYER_STOREFRONT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#1F2430] bg-[#12161F] py-3 text-xs font-bold uppercase tracking-wider text-neutral-300 transition hover:border-[#CCFF00]/40 hover:text-[#CCFF00]"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 dark:border-[#1F2430] bg-neutral-100 dark:bg-[#12161F] py-3 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 transition hover:border-[#CCFF00]/40 hover:text-black dark:hover:text-[#CCFF00]"
           >
             <Store size={14} />
             <span>Launch Buyer Storefront</span>
@@ -86,7 +86,7 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
           </a>
         </div>
 
-        <div className="flex items-center justify-between border-t border-[#1F2430] pt-4 text-[10px] text-neutral-500">
+        <div className="flex items-center justify-between border-t border-neutral-200 dark:border-[#1F2430] pt-4 text-[10px] text-neutral-500">
           <span className="flex items-center gap-1.5">
             <ShieldCheck size={13} className="text-[#CCFF00]" /> 256-bit SSL Verified
           </span>
@@ -103,16 +103,16 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
  */
 function BuyerRedirectNotice({ path }: { path: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#000000] p-6 text-center text-white antialiased">
-      <div className="w-full max-w-md rounded-3xl border border-[#1F2430] bg-[#0D1117] p-8 shadow-2xl space-y-5">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F4F5F7] dark:bg-[#000000] p-6 text-center text-neutral-900 dark:text-white antialiased transition-colors duration-200">
+      <div className="w-full max-w-md rounded-3xl border border-neutral-200 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] p-8 shadow-2xl space-y-5">
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#CCFF00]/10 border border-[#CCFF00]/30 text-[#CCFF00]">
           <Store size={24} />
         </span>
         <div>
-          <h2 className="text-lg font-black uppercase tracking-tight text-white">
+          <h2 className="text-lg font-black uppercase tracking-tight text-neutral-900 dark:text-white">
             Consumer Shopping Portal
           </h2>
-          <p className="mt-1.5 text-xs text-neutral-400">
+          <p className="mt-1.5 text-xs text-neutral-600 dark:text-neutral-400">
             This deployment is strictly the <span className="text-[#CCFF00] font-bold">Flash Seller Central Hub</span>. Consumer shopping, retail cart, and buyer checkout are located at the official Buyer Storefront.
           </p>
         </div>
@@ -130,7 +130,7 @@ function BuyerRedirectNotice({ path }: { path: string }) {
 
           <Link
             href="/seller/dashboard"
-            className="inline-flex w-full items-center justify-center rounded-full border border-[#1F2430] bg-[#12161F] py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition"
+            className="inline-flex w-full items-center justify-center rounded-full border border-neutral-200 dark:border-[#1F2430] bg-neutral-100 dark:bg-[#12161F] py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-400 hover:text-black dark:hover:text-white transition"
           >
             Return to Seller Dashboard
           </Link>

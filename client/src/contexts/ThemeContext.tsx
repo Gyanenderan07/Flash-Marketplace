@@ -21,7 +21,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
-      const stored = localStorage.getItem("flash-seller-theme");
+      const stored = localStorage.getItem("flash_seller_theme") || localStorage.getItem("flash-seller-theme");
       if (stored === "dark" || stored === "light") return stored;
     } catch {
       // localStorage unavailable
@@ -37,14 +37,13 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.setAttribute("data-theme", "dark");
-      root.classList.add("dark");
-    } else {
-      root.setAttribute("data-theme", "light");
-      root.classList.remove("dark");
-    }
+    root.classList.remove("dark", "light");
+    root.classList.add(theme);
+    root.setAttribute("data-theme", theme);
+    root.style.colorScheme = theme;
+
     try {
+      localStorage.setItem("flash_seller_theme", theme);
       localStorage.setItem("flash-seller-theme", theme);
     } catch {
       // localStorage unavailable

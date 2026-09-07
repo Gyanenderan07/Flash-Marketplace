@@ -320,8 +320,8 @@ function StepDots({ total, current }: { total: number; current: number }) {
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-neutral-800 bg-[#0D1117] px-3 py-2.5 text-xs shadow-xl">
-      <div className="font-bold text-neutral-400 mb-1">{label}</div>
+    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#0D1117] px-3 py-2.5 text-xs shadow-xl text-neutral-900 dark:text-white">
+      <div className="font-bold text-neutral-500 dark:text-neutral-400 mb-1">{label}</div>
       {payload.map((p: any, i: number) => (
         <div key={i} className="font-mono font-semibold" style={{ color: p.color }}>
           {p.name === 'revenue' ? formatINR(p.value) : p.value}
@@ -672,20 +672,20 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
 
   // ── Theme-aware class helpers ──
   const C = {
-    base:       isDark ? 'bg-[#000000] text-[#F9FAFB]' : 'bg-[#F8F9FA] text-[#111827]',
-    header:     isDark ? 'border-neutral-800/80 bg-[#000000]/90' : 'border-gray-200 bg-white/90',
-    heroCard:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:       isDark ? 'bg-[#12161F] border-neutral-800' : 'bg-gray-50 border-gray-200',
-    input:      isDark ? 'border-neutral-800 bg-[#12161F] text-white placeholder:text-neutral-600 focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#CCFF00]',
-    select:     isDark ? 'border-neutral-800 bg-[#12161F] text-white' : 'border-gray-200 bg-gray-50 text-gray-900',
-    label:      isDark ? 'text-neutral-400' : 'text-gray-500',
-    muted:      isDark ? 'text-neutral-400' : 'text-gray-500',
-    subtle:     isDark ? 'text-neutral-600' : 'text-gray-400',
-    divider:    isDark ? 'border-neutral-800' : 'border-gray-100',
-    tabActive:  'bg-[#CCFF00] text-black shadow-[0_0_15px_rgba(204,255,0,0.3)]',
-    tabInactive: isDark ? 'border border-neutral-800 bg-[#0D1117] text-neutral-500 hover:text-white' : 'border border-gray-200 bg-white text-gray-500 hover:text-gray-900',
-    tableRow:   isDark ? 'hover:bg-[#12161F]/60' : 'hover:bg-gray-50',
-    pill:       isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-gray-200 bg-gray-50',
+    base:       isDark ? 'bg-[#000000] text-[#F9FAFB]' : 'bg-[#F4F5F7] text-[#111827]',
+    header:     isDark ? 'border-neutral-800/80 bg-[#000000]/90' : 'border-neutral-200 bg-white/90 shadow-sm',
+    heroCard:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200 bg-white shadow-sm',
+    well:       isDark ? 'bg-[#12161F] border-neutral-800' : 'bg-neutral-50 border-neutral-200',
+    input:      isDark ? 'border-neutral-700 bg-[#141720] text-white placeholder:text-neutral-500 focus:border-[#CCFF00]' : 'border-neutral-300 bg-neutral-50 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00]',
+    select:     isDark ? 'border-neutral-700 bg-[#141720] text-white' : 'border-neutral-300 bg-neutral-50 text-neutral-900',
+    label:      isDark ? 'text-neutral-400' : 'text-neutral-600',
+    muted:      isDark ? 'text-neutral-400' : 'text-neutral-600',
+    subtle:     isDark ? 'text-neutral-500' : 'text-neutral-400',
+    divider:    isDark ? 'border-neutral-800' : 'border-neutral-200',
+    tabActive:  'bg-[#CCFF00] text-black shadow-[0_0_15px_rgba(204,255,0,0.3)] font-extrabold',
+    tabInactive: isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-neutral-900',
+    tableRow:   isDark ? 'hover:bg-[#12161F]/60' : 'hover:bg-neutral-50',
+    pill:       isDark ? 'border-neutral-800 bg-neutral-800 text-neutral-300' : 'border-neutral-200 bg-neutral-200/80 text-neutral-800',
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -696,7 +696,9 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       <div className="space-y-6">
 
         {/* ── HERO BANNER ── */}
-        <div className={`relative mb-7 overflow-hidden rounded-3xl border p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5 ${C.heroCard}`}>
+        <div className={`relative mb-7 overflow-hidden rounded-3xl border p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5 ${
+          isDark ? 'bg-[#0D1117] border-neutral-800' : 'bg-[#FFFFFF] border-neutral-200 shadow-sm'
+        }`}>
           {/* Glow orbs */}
           <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[#CCFF00]/8 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#CCFF00]/4 blur-3xl" />
@@ -707,10 +709,10 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
               <StatusChip label="⚡ Flash Merchant Hub" variant="accent" />
               <StatusChip label="Enterprise Cloud Sync" variant="success" />
             </div>
-            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-neutral-900 dark:text-white">
               Seller &amp; Merchant Dashboard
             </h1>
-            <p className={`max-w-lg text-sm font-medium ${C.muted}`}>
+            <p className="max-w-lg text-sm font-medium text-neutral-600 dark:text-neutral-400">
               Manage live storefront listings, sync real-time inventory, and track wholesale fulfillment.
             </p>
           </div>
@@ -730,11 +732,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
         <div className="mb-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              label: 'Active SKUs',
-              value: metrics.skuCount.toString().padStart(2, '0'),
-              sub: 'Live catalog count',
-              subVariant: 'success' as const,
-              icon: Package,
+              label: 'Active Listings',
+              value: metrics.skuCount.toString(),
+              sub: 'Across all categories',
+              subVariant: 'default' as const,
+              icon: PackageCheck,
             },
             {
               label: 'Gross Revenue',
@@ -766,19 +768,21 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                 key={card.label}
                 whileHover={{ y: -3 }}
                 transition={SPRING_MODAL}
-                className={`relative overflow-hidden rounded-2xl border p-5 transition ${C.heroCard}`}
+                className={`relative overflow-hidden rounded-2xl border p-5 transition ${
+                  isDark ? 'bg-[#0E1117] border-neutral-800/80' : 'bg-[#FFFFFF] border-neutral-200 shadow-sm'
+                }`}
               >
                 <div className="flex items-start justify-between">
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${C.label}`}>{card.label}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">{card.label}</span>
                   <Icon size={15} className="text-[#CCFF00]" />
                 </div>
-                <div className={`mt-3 font-mono text-2xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <div className="mt-3 font-mono text-2xl font-semibold tabular-nums text-neutral-900 dark:text-white">
                   {card.value}
                   {card.valueSuffix && <span className={`text-sm font-normal ${C.subtle}`}>{card.valueSuffix}</span>}
                 </div>
                 <div className={`mt-1.5 text-[10px] font-semibold ${
                   card.subVariant === 'success' ? 'text-[#52E82E]' :
-                  card.subVariant === 'warning' ? 'text-amber-400' : C.muted
+                  card.subVariant === 'warning' ? 'text-amber-500 dark:text-amber-400' : 'text-neutral-500 dark:text-neutral-400'
                 }`}>{card.sub}</div>
               </motion.div>
             );
@@ -788,7 +792,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
         {/* ── TAB NAVIGATION ── */}
         <LayoutGroup>
           <div className={`mb-6 flex items-center justify-between gap-4 border-b pb-4 ${C.divider}`}>
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-none p-1.5 rounded-full bg-neutral-200/70 dark:bg-[#14171F]">
               {TABS.map(tab => {
                 const Icon  = tab.icon;
                 const isAct = activeTab === tab.id;
@@ -859,7 +863,9 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                       key={cat}
                       onClick={() => { setSelectedCategory(cat); setCatalogPage(1); }}
                       className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
-                        selectedCategory === cat ? C.tabActive : C.tabInactive
+                        selectedCategory === cat
+                          ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)] font-extrabold'
+                          : 'bg-neutral-200/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700'
                       }`}
                     >
                       {cat}
@@ -1014,7 +1020,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                   <div className={`overflow-hidden rounded-2xl border ${C.heroCard}`}>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className={`border-b text-[9px] font-black uppercase tracking-widest ${C.divider} ${isDark ? 'bg-[#12161F] text-neutral-500' : 'bg-gray-50 text-gray-400'}`}>
+                        <thead className="border-b text-[9px] font-black uppercase tracking-widest border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-[#14171F] text-neutral-700 dark:text-neutral-300">
                           <tr>
                             {['Product', 'Category', 'Price', 'Discount', 'Stock', 'Preview', 'Actions'].map(h => (
                               <th key={h} className={`px-4 py-3 ${h === 'Actions' ? 'text-right' : ''}`}>{h}</th>
@@ -1428,12 +1434,12 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       <AnimatePresence>
         {isDrawerOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
             onClick={e => { if (e.target === e.currentTarget) setIsDrawerOpen(false); }}>
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={SPRING_MODAL}
-              className={`flex h-full w-full max-w-lg flex-col border-l shadow-2xl ${isDark ? 'border-neutral-800 bg-[#0D1117]' : 'border-gray-200 bg-white'}`}
+              className="flex h-full w-full max-w-lg flex-col border-l shadow-2xl border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#0D1117] text-neutral-900 dark:text-white"
             >
               {/* Drawer header */}
               <div className={`flex items-center justify-between border-b p-5 ${C.divider}`}>
@@ -1638,11 +1644,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       <AnimatePresence>
         {productToDelete && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <motion.div
               initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.93, opacity: 0 }}
               transition={SPRING_MODAL}
-              className={`w-full max-w-sm rounded-3xl border p-6 shadow-2xl ${isDark ? 'border-neutral-800 bg-[#0D1117]' : 'border-gray-200 bg-white'}`}
+              className="w-full max-w-sm rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#0D1117] text-neutral-900 dark:text-white p-6 shadow-2xl"
             >
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-500/10 border border-red-500/20 mb-4">
                 <Trash2 size={20} className="text-red-400" />
@@ -1672,12 +1678,12 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       <AnimatePresence>
         {dispatchModal && selectedOrder && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={e => { if (e.target === e.currentTarget) setDispatchModal(false); }}>
             <motion.div
               initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.93, opacity: 0 }}
               transition={SPRING_MODAL}
-              className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl ${isDark ? 'border-neutral-800 bg-[#0D1117]' : 'border-gray-200 bg-white'}`}
+              className="w-full max-w-md rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#0D1117] text-neutral-900 dark:text-white p-6 shadow-2xl"
             >
               <div className={`flex items-center justify-between border-b pb-4 mb-4 ${C.divider}`}>
                 <div>

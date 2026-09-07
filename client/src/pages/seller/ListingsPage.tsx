@@ -431,7 +431,7 @@ export default function ListingsPage() {
     well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
     input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white placeholder:text-neutral-600 focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#CCFF00]',
     label:  isDark ? 'text-neutral-400' : 'text-gray-500',
-    th:     isDark ? 'text-neutral-500 bg-[#12161F]' : 'text-gray-400 bg-gray-50',
+    th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
     row:    isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
     text:   isDark ? 'text-white'  : 'text-gray-900',
     muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
@@ -526,8 +526,8 @@ export default function ListingsPage() {
             onClick={() => { setCatFilter(cat); setPage(1); }}
             className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
               catFilter === cat
-                ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-                : `border ${C.well} ${C.muted} hover:text-white`
+                ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)] font-extrabold'
+                : 'bg-neutral-200/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700'
             }`}
           >
             {cat}
@@ -650,7 +650,7 @@ export default function ListingsPage() {
                               className={`rounded-lg border p-1.5 transition ${C.well} ${C.muted} hover:text-[#CCFF00]`} title="Preview">
                               <ExternalLink size={12} />
                             </a>
-                            <button onClick={() => openEdit(p)} className={`rounded-lg border p-1.5 transition ${C.well} ${C.muted} hover:text-white`} title="Edit">
+                            <button onClick={() => openEdit(p)} className={`rounded-lg border p-1.5 transition ${C.well} ${C.muted} hover:text-neutral-900 dark:hover:text-white`} title="Edit">
                               <Edit3 size={12} />
                             </button>
                             <button onClick={() => setDeleteTarget(p)} className={`rounded-lg border p-1.5 transition ${C.well} ${C.muted} hover:border-red-500/50 hover:text-red-400`} title="Delete">
@@ -758,7 +758,7 @@ export default function ListingsPage() {
                     className={`flex-shrink-0 rounded-t-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider transition ${
                       drawerTab === tab.id
                         ? 'border-b-2 border-[#CCFF00] text-[#CCFF00]'
-                        : `${C.muted} hover:text-white`
+                        : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
                     }`}
                   >
                     {tab.label}
@@ -958,7 +958,7 @@ export default function ListingsPage() {
 
               {/* Drawer footer */}
               <div className={`flex items-center justify-between border-t px-5 py-4 ${C.divider}`}>
-                <button onClick={() => setDrawerOpen(false)} className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${C.well} ${C.muted} hover:text-white`}>
+                <button onClick={() => setDrawerOpen(false)} className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${C.well} ${C.muted} hover:text-neutral-900 dark:hover:text-white`}>
                   Cancel
                 </button>
                 <motion.button

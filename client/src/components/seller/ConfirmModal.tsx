@@ -34,7 +34,7 @@ export function ConfirmModal({
             animate={{ scale: 1,    opacity: 1 }}
             exit={{ scale: 0.92, opacity: 0 }}
             transition={SPRING}
-            className="w-full max-w-sm rounded-3xl border border-[#1F2430] bg-[#0D1117] p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-3xl border border-neutral-200 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] text-neutral-900 dark:text-white p-6 shadow-2xl"
           >
             {/* Icon */}
             <div className={`mb-4 grid h-12 w-12 place-items-center rounded-2xl border ${
@@ -43,14 +43,14 @@ export function ConfirmModal({
               <AlertTriangle size={22} className={danger ? 'text-red-400' : 'text-[#CCFF00]'} />
             </div>
 
-            <h3 className="text-base font-black tracking-tight text-white">{title}</h3>
-            <p className="mt-2 text-xs leading-relaxed text-neutral-400">{body}</p>
+            <h3 className="text-base font-black tracking-tight text-neutral-900 dark:text-white">{title}</h3>
+            <p className="mt-2 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">{body}</p>
 
             <div className="mt-6 flex items-center gap-2.5">
               {/* Cancel */}
               <button
                 onClick={onCancel}
-                className="flex-1 rounded-full border border-[#1F2430] bg-[#12161F] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-400 transition hover:border-neutral-600 hover:text-white"
+                className="flex-1 rounded-full border border-neutral-200 dark:border-[#1F2430] bg-neutral-100 dark:bg-[#12161F] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-400 transition hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-black dark:hover:text-white"
               >
                 {cancelLabel}
               </button>

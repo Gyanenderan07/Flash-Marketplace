@@ -96,7 +96,7 @@ export default function InventoryPage() {
     well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
     text:   isDark ? 'text-white'  : 'text-gray-900',
     muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
-    th:     isDark ? 'text-neutral-500 bg-[#12161F]' : 'text-gray-400 bg-gray-50',
+    th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
     row:    isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
@@ -203,11 +203,11 @@ export default function InventoryPage() {
                         <td className="px-4 py-3">
                           <div className={`inline-flex items-center gap-0.5 rounded-full border p-0.5 ${isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-white'}`}>
                             <button onClick={() => adjustStock(p, -1)} disabled={(p.stock ?? 0) <= 0}
-                              className={`grid h-6 w-6 place-items-center rounded-full transition ${C.muted} hover:bg-[#1F2430] hover:text-white disabled:opacity-40`}>
+                              className={`grid h-6 w-6 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-200 dark:hover:bg-[#1F2430] hover:text-neutral-900 dark:hover:text-white disabled:opacity-40`}>
                               <Minus size={10} />
                             </button>
                             <button onClick={() => adjustStock(p, -10)} disabled={(p.stock ?? 0) <= 0}
-                              className={`hidden rounded-full px-2 py-0.5 text-[9px] font-bold transition sm:block ${C.muted} hover:text-white`}>
+                              className={`hidden rounded-full px-2 py-0.5 text-[9px] font-bold transition sm:block ${C.muted} hover:text-neutral-900 dark:hover:text-white`}>
                               –10
                             </button>
                             <button onClick={() => adjustStock(p, 10)}
@@ -215,7 +215,7 @@ export default function InventoryPage() {
                               +10
                             </button>
                             <button onClick={() => adjustStock(p, 1)}
-                              className={`grid h-6 w-6 place-items-center rounded-full transition ${C.muted} hover:bg-[#1F2430] hover:text-[#CCFF00]`}>
+                              className={`grid h-6 w-6 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-200 dark:hover:bg-[#1F2430] hover:text-[#CCFF00]`}>
                               <Plus size={10} />
                             </button>
                           </div>

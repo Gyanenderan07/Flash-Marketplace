@@ -168,7 +168,7 @@ export default function PromotionsPage() {
             whileHover={{ y: -1, boxShadow: '0 0 20px rgba(204,255,0,0.35)' }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setFormOpen(f => !f)}
-            className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2 text-xs font-black uppercase tracking-widest text-[#CCFF00] shadow-[0_0_16px_rgba(204,255,0,0.2)]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#CCFF00] text-black font-extrabold px-5 py-2 text-xs uppercase tracking-widest shadow-[0_0_16px_rgba(204,255,0,0.25)] hover:shadow-[0_0_24px_rgba(204,255,0,0.4)] transition"
           >
             <Plus size={13} /> New Promo Code
           </motion.button>
@@ -176,13 +176,13 @@ export default function PromotionsPage() {
       </div>
 
       {/* Sub-nav Tabs */}
-      <div className="mb-6 flex items-center gap-2 border-b border-[#1F2430] pb-2">
+      <div className="mb-6 flex items-center gap-2 border-b border-neutral-200 dark:border-[#1F2430] pb-2">
         <button
           onClick={() => setSubTab('coupons')}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
             subTab === 'coupons'
               ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-              : `${C.muted} hover:text-white`
+              : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
           }`}
         >
           <PercentSquare size={13} /> Promo Codes ({promos.length})
@@ -192,7 +192,7 @@ export default function PromotionsPage() {
           className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
             subTab === 'volume_tiers'
               ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-              : `${C.muted} hover:text-white`
+              : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
           }`}
         >
           <Layers size={13} /> Volume Discount Rule Builder

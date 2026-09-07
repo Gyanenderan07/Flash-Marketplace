@@ -110,7 +110,7 @@ export default function PayoutsPage() {
     well:    isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
     text:    isDark ? 'text-white'  : 'text-gray-900',
     muted:   isDark ? 'text-neutral-500' : 'text-gray-400',
-    th:      isDark ? 'text-neutral-500 bg-[#12161F]' : 'text-gray-400 bg-gray-50',
+    th:      isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 

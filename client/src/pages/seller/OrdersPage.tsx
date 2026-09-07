@@ -177,7 +177,7 @@ export default function OrdersPage() {
     well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
     text:   isDark ? 'text-white'  : 'text-gray-900',
     muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
-    th:     isDark ? 'text-neutral-500 bg-[#12161F]' : 'text-gray-400 bg-gray-50',
+    th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
     row:    isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
     input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
@@ -278,7 +278,7 @@ export default function OrdersPage() {
                             {(o.delivery_status || 'pending') === 'pending' ? 'Process' : 'Update'}
                           </button>
                           <button onClick={() => printPackingSlip(o)}
-                            className={`rounded-full border px-2 py-1 text-[10px] font-bold transition ${C.well} ${C.muted} hover:text-white`}>
+                            className={`rounded-full border px-2 py-1 text-[10px] font-bold transition ${C.well} ${C.muted} hover:text-neutral-900 dark:hover:text-white`}>
                             Slip
                           </button>
                         </div>
@@ -454,11 +454,11 @@ export default function OrdersPage() {
               {/* Footer actions */}
               <div className={`flex items-center gap-2.5 border-t px-5 py-4 ${C.divider}`}>
                 <button onClick={() => printPackingSlip(selectedOrder)}
-                  className={`flex-1 rounded-full border py-2.5 text-xs font-bold uppercase tracking-wider transition ${C.well} ${C.muted} hover:text-white`}>
+                  className={`flex-1 rounded-full border py-2.5 text-xs font-bold uppercase tracking-wider transition ${C.well} ${C.muted} hover:text-neutral-900 dark:hover:text-white`}>
                   Print Slip
                 </button>
                 <button onClick={() => printShippingLabel(selectedOrder)}
-                  className={`flex-1 rounded-full border py-2.5 text-xs font-bold uppercase tracking-wider transition ${C.well} ${C.muted} hover:text-white`}>
+                  className={`flex-1 rounded-full border py-2.5 text-xs font-bold uppercase tracking-wider transition ${C.well} ${C.muted} hover:text-neutral-900 dark:hover:text-white`}>
                   Print Label
                 </button>
                 <motion.button

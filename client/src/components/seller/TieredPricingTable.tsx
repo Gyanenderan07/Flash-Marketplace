@@ -40,13 +40,13 @@ export function TieredPricingTable({ tiers, onChange, currency = '₹', readonly
     <div className="space-y-2">
       {/* Header */}
       <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
-        <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Min Qty</span>
-        <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Unit Price ({currency})</span>
+        <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">Min Qty</span>
+        <span className="text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">Unit Price ({currency})</span>
         {!readonly && <span />}
       </div>
 
       {sorted.length === 0 && (
-        <div className="rounded-xl border border-dashed border-[#1F2430] bg-[#12161F] px-4 py-4 text-center text-xs text-neutral-600">
+        <div className="rounded-xl border border-dashed border-neutral-300 dark:border-[#1F2430] bg-neutral-50 dark:bg-[#12161F] px-4 py-4 text-center text-xs text-neutral-500 dark:text-neutral-400">
           No tiers yet — add bulk pricing tiers below
         </div>
       )}
@@ -60,13 +60,13 @@ export function TieredPricingTable({ tiers, onChange, currency = '₹', readonly
             animate={{ opacity: 1, y: 0 }}
             className={`grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
               isLowest
-                ? 'border-[#CCFF00]/30 bg-[#CCFF00]/5'
-                : 'border-[#1F2430] bg-[#12161F]'
+                ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10'
+                : 'border-neutral-200 dark:border-[#1F2430] bg-neutral-50 dark:bg-[#12161F]'
             }`}
           >
             {isLowest && (
               <div className="col-span-full -mt-1 mb-1">
-                <span className="text-[9px] font-black uppercase tracking-widest text-[#CCFF00]/70">
+                <span className="text-[9px] font-black uppercase tracking-widest text-lime-600 dark:text-[#CCFF00]/90">
                   ★ Best deal tier
                 </span>
               </div>
@@ -79,7 +79,7 @@ export function TieredPricingTable({ tiers, onChange, currency = '₹', readonly
               value={tier.min_qty}
               disabled={readonly}
               onChange={e => updateTier(idx, 'min_qty', parseInt(e.target.value) || 1)}
-              className="w-full rounded-lg border border-[#1F2430] bg-[#0D1117] px-3 py-2 text-xs font-mono text-white outline-none transition focus:border-[#CCFF00] disabled:opacity-60"
+              className="w-full rounded-lg border border-neutral-300 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] px-3 py-2 text-xs font-mono text-neutral-900 dark:text-white outline-none transition focus:border-[#CCFF00] disabled:opacity-60"
             />
 
             {/* Unit Price */}
@@ -90,7 +90,7 @@ export function TieredPricingTable({ tiers, onChange, currency = '₹', readonly
               value={tier.unit_price}
               disabled={readonly}
               onChange={e => updateTier(idx, 'unit_price', parseFloat(e.target.value) || 0)}
-              className="w-full rounded-lg border border-[#1F2430] bg-[#0D1117] px-3 py-2 text-xs font-mono text-white outline-none transition focus:border-[#CCFF00] disabled:opacity-60"
+              className="w-full rounded-lg border border-neutral-300 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] px-3 py-2 text-xs font-mono text-neutral-900 dark:text-white outline-none transition focus:border-[#CCFF00] disabled:opacity-60"
             />
 
             {/* Remove */}
@@ -98,7 +98,7 @@ export function TieredPricingTable({ tiers, onChange, currency = '₹', readonly
               <button
                 type="button"
                 onClick={() => removeTier(idx)}
-                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg border border-[#1F2430] bg-[#0D1117] text-neutral-600 transition hover:border-red-500/50 hover:text-red-400"
+                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg border border-neutral-200 dark:border-[#1F2430] bg-white dark:bg-[#0D1117] text-neutral-500 hover:border-red-500/50 hover:text-red-500"
               >
                 <Trash2 size={13} />
               </button>
@@ -112,7 +112,7 @@ export function TieredPricingTable({ tiers, onChange, currency = '₹', readonly
         <button
           type="button"
           onClick={addTier}
-          className="inline-flex items-center gap-2 rounded-xl border border-dashed border-[#1F2430] px-4 py-2.5 text-xs font-bold text-neutral-500 transition hover:border-[#CCFF00]/40 hover:text-[#CCFF00]"
+          className="inline-flex items-center gap-2 rounded-xl border border-dashed border-neutral-300 dark:border-[#1F2430] px-4 py-2.5 text-xs font-bold text-neutral-600 dark:text-neutral-400 transition hover:border-[#CCFF00] hover:text-[#CCFF00]"
         >
           <Plus size={12} /> Add Price Tier
         </button>
