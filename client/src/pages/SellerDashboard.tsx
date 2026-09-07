@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis
@@ -107,11 +107,11 @@ const ORDER_PAGE_SIZE = 20;
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'catalog',  label: 'Live Catalog',       short: 'Catalog',    icon: Package,       route: '/seller/dashboard' },
-  { id: 'orders',   label: 'Fulfillment Queue',   short: 'Orders',     icon: ClipboardList, route: '/seller/orders'    },
-  { id: 'rfq',      label: 'Buyer RFQs',          short: 'RFQs',       icon: Quote,         route: '/seller/rfq'       },
-  { id: 'payouts',  label: 'Payout Ledger',       short: 'Payouts',    icon: Wallet,        route: '/seller/payouts'   },
-  { id: 'health',   label: 'Account Health',      short: 'Health',     icon: BarChart3,     route: '/seller/health'    },
+  { id: 'catalog',  label: 'Live Catalog & Inventory', short: 'Catalog',    icon: Package,       route: '/seller/dashboard' },
+  { id: 'orders',   label: 'Fulfillment Queue',        short: 'Orders',     icon: ClipboardList, route: '/seller/orders'    },
+  { id: 'rfq',      label: 'Buyer RFQs',               short: 'RFQs',       icon: Quote,         route: '/seller/rfq'       },
+  { id: 'payouts',  label: 'Payout Ledger',            short: 'Payouts',    icon: Wallet,        route: '/seller/payouts'   },
+  { id: 'health',   label: 'Account Health',           short: 'Health',     icon: BarChart3,     route: '/seller/health'    },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -844,47 +844,38 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
         </div>
 
         {/* ── TAB NAVIGATION ── */}
-        <LayoutGroup>
-          <div className={`mb-6 flex items-center justify-between gap-4 border-b pb-4 ${C.divider}`}>
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-none p-1.5 rounded-full bg-neutral-200/70 dark:bg-[#14171F]">
-              {TABS.map(tab => {
-                const Icon  = tab.icon;
-                const isAct = activeTab === tab.id;
-                return (
-                  <motion.button
-                    key={tab.id}
-                    onClick={() => switchTab(tab.id)}
-                    className={`relative inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-wider transition whitespace-nowrap ${
-                      isAct ? C.tabActive : C.tabInactive
-                    }`}
-                    whileHover={!isAct ? { y: -0.5 } : undefined}
-                    whileTap={{ scale: 0.97 }}
-                    transition={SPRING_TABS}
-                  >
-                    {isAct && (
-                      <motion.span
-                        layoutId="activeTabBg"
-                        className="absolute inset-0 rounded-full bg-[#CCFF00] -z-10"
-                        transition={SPRING_TABS}
-                      />
-                    )}
-                    <Icon size={12} />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                    <span className="sm:hidden">{tab.short}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            {/* Inline add shortcut */}
-            <button
-              onClick={openAddDrawer}
-              className={`hidden sm:inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[10px] font-black text-[#CCFF00] transition hover:border-[#CCFF00] ${C.pill}`}
-            >
-              <Plus size={12} /> New Listing
-            </button>
+        <div className="w-full flex items-center justify-between gap-3 mb-6 flex-wrap lg:flex-nowrap">
+          {/* Tab Navigation Pill Group */}
+          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-100 dark:bg-[#0D1117] border border-neutral-200 dark:border-neutral-800/80 shadow-inner overflow-x-auto scrollbar-none max-w-full">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => switchTab(tab.id)}
+                  className={`relative shrink-0 flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.35)]"
+                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-900/60"
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span className="whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
-        </LayoutGroup>
+
+          {/* Standalone Action CTA on the right */}
+          <button
+            onClick={openAddDrawer}
+            className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-[#CCFF00] text-xs font-bold uppercase tracking-wider transition-all duration-200 shadow-sm"
+          >
+            <span className="text-sm font-black text-[#15803D] dark:text-[#CCFF00]">+</span>
+            <span className="whitespace-nowrap">New Listing</span>
+          </button>
+        </div>
 
         {/* ── TAB CONTENT ── */}
         <AnimatePresence mode="wait">
