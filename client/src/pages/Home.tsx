@@ -7,6 +7,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import LoginPage from './auth/LoginPage';
 import SignupPage from './auth/SignupPage';
 
+// Public 3D Showcase Landing Page
+import LandingPage from './LandingPage';
+
 // Seller Central Views
 import SellerDashboardView from './SellerDashboard';
 import ListingsPage from './seller/ListingsPage';
@@ -70,6 +73,9 @@ function BuyerRedirectNotice({ path }: { path: string }) {
  */
 export default function AppRouter() {
   const [location] = useLocation();
+
+  // Public 3D Landing Homepage
+  if (location === '/') return <LandingPage />;
 
   // Public Auth Routes
   if (location === '/auth/login')  return <LoginPage />;
