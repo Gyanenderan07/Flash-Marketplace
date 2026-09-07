@@ -8,3 +8,4 @@ export { ConfirmModal } from './ConfirmModal';
 export { StatusBadge }  from './StatusBadge';
 export { BulkActionBar } from './BulkActionBar';
 export { TieredPricingTable } from './TieredPricingTable';
+export { TableSortDropdown } from './TableSortDropdown';

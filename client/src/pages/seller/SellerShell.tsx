@@ -279,7 +279,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
               <div className="flex flex-col">
                 <span className="text-sm font-black tracking-tight uppercase">
                   <span className="text-neutral-900 dark:text-white">FLASH </span>
-                  <span className="text-[#CCFF00] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] dark:drop-shadow-none">BUSINESS</span>
+                  <span className="text-[#15803D] dark:text-[#CCFF00] font-black transition-colors">BUSINESS</span>
                 </span>
                 <span className="text-[10px] tracking-widest text-neutral-500 dark:text-neutral-400 font-bold uppercase">
                   SELLER CENTRAL
@@ -362,7 +362,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
                 <div className="flex flex-col">
                   <span className="text-sm font-black tracking-tight uppercase">
                     <span className="text-neutral-900 dark:text-white">FLASH </span>
-                    <span className="text-[#CCFF00] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] dark:drop-shadow-none">BUSINESS</span>
+                    <span className="text-[#15803D] dark:text-[#CCFF00] font-black transition-colors">BUSINESS</span>
                   </span>
                   <span className="text-[10px] tracking-widest text-neutral-500 dark:text-neutral-400 font-bold uppercase">
                     SELLER CENTRAL

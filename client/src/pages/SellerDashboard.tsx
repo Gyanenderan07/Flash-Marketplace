@@ -66,7 +66,27 @@ import {
 } from '@/lib/supabase';
 import { SafeImage } from '@/components/SafeImage';
 import { useTheme } from '@/contexts/ThemeContext';
+import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
 import SellerShell, { resolveBreadcrumbRoute } from './seller/SellerShell';
+
+type CatalogSortKey =
+  | 'newest'
+  | 'oldest'
+  | 'price_asc'
+  | 'price_desc'
+  | 'stock_asc'
+  | 'stock_desc'
+  | 'name_asc';
+
+const CATALOG_SORT_OPTIONS: SortOption<CatalogSortKey>[] = [
+  { id: 'newest',     label: 'Newest First' },
+  { id: 'oldest',     label: 'Oldest First' },
+  { id: 'price_asc',  label: 'Price: Low to High' },
+  { id: 'price_desc', label: 'Price: High to Low' },
+  { id: 'stock_asc',  label: 'Stock: Low to High' },
+  { id: 'stock_desc', label: 'Stock: High to Low' },
+  { id: 'name_asc',   label: 'Alphabetical (A-Z)' },
+];
 
 // ─── Animation presets ───────────────────────────────────────────────────────
 const SPRING_TABS   = { type: 'spring', stiffness: 380, damping: 30 } as const;
@@ -230,11 +250,11 @@ function GhostButton({
 /** Status chip */
 function StatusChip({ label, variant = 'default' }: { label: string; variant?: 'success' | 'warning' | 'danger' | 'default' | 'accent' }) {
   const variants = {
-    success: 'bg-green-500/10 text-green-400 border-green-500/20',
-    warning: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    danger:  'bg-red-500/10 text-red-400 border-red-500/20',
-    accent:  'bg-[#CCFF00]/10 text-[#CCFF00] border-[#CCFF00]/20',
-    default: 'bg-neutral-800/50 text-neutral-400 border-neutral-700',
+    success: 'border-emerald-300 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold',
+    warning: 'border-amber-300 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-bold',
+    danger:  'border-red-300 dark:border-red-800/50 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-bold',
+    accent:  'border-lime-300 dark:border-[#CCFF00]/20 bg-lime-50 dark:bg-[#CCFF00]/10 text-lime-800 dark:text-[#CCFF00] font-bold',
+    default: 'border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-400 font-bold',
   };
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest ${variants[variant]}`}>
@@ -372,6 +392,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
   const [selectedCategory,  setSelectedCategory]  = useState('All');
   const [inStockOnly,       setInStockOnly]        = useState(false);
   const [viewMode,          setViewMode]           = useState<'grid' | 'table'>('grid');
+  const [catalogSortKey,    setCatalogSortKey]     = useState<CatalogSortKey>('newest');
 
   // ── Pagination ──
   const [catalogPage, setCatalogPage] = useState(1);
@@ -615,17 +636,42 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     }
   };
 
-  // ── Filtered & paginated products ──
-  const filteredProducts = useMemo(() => products.filter(p => {
-    const q = searchQuery.toLowerCase();
-    const matchSearch = !q || p.name.toLowerCase().includes(q) ||
-      (p.brand || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q);
-    const matchCat = selectedCategory === 'All' ||
-      (p.category || '').toLowerCase().includes(selectedCategory.toLowerCase().replace(/ & /g, '-')) ||
-      selectedCategory.toLowerCase().includes((p.category || '').toLowerCase());
-    const matchStock = !inStockOnly || (p.stock ?? 0) > 0;
-    return matchSearch && matchCat && matchStock;
-  }), [products, searchQuery, selectedCategory, inStockOnly]);
+  // ── Filtered, sorted & paginated products ──
+  const filteredProducts = useMemo(() => {
+    let list = products.filter(p => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q || p.name.toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q) ||
+        (p.sku || '').toLowerCase().includes(q);
+      const matchCat = selectedCategory === 'All' ||
+        (p.category || '').toLowerCase().includes(selectedCategory.toLowerCase().replace(/ & /g, '-')) ||
+        selectedCategory.toLowerCase().includes((p.category || '').toLowerCase());
+      const matchStock = !inStockOnly || (p.stock ?? 0) > 0;
+      return matchSearch && matchCat && matchStock;
+    });
+
+    list.sort((a, b) => {
+      switch (catalogSortKey) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'price_asc':
+          return (a.price || 0) - (b.price || 0);
+        case 'price_desc':
+          return (b.price || 0) - (a.price || 0);
+        case 'stock_asc':
+          return (a.stock ?? 0) - (b.stock ?? 0);
+        case 'stock_desc':
+          return (b.stock ?? 0) - (a.stock ?? 0);
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return list;
+  }, [products, searchQuery, selectedCategory, inStockOnly, catalogSortKey]);
 
   const gridPages  = Math.max(1, Math.ceil(filteredProducts.length / GRID_PAGE_SIZE));
   const tablePages = Math.max(1, Math.ceil(filteredProducts.length / TABLE_PAGE_SIZE));
@@ -888,10 +934,17 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                 </div>
               </div>
 
-              {/* Results count */}
+              {/* Results count & Sort */}
               {!isLoading && filteredProducts.length > 0 && (
-                <div className={`mb-3 text-[10px] font-semibold ${C.subtle}`}>
-                  {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} · Page {catalogPage} of {viewMode === 'grid' ? gridPages : tablePages}
+                <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                  <div className={`text-xs font-semibold ${C.subtle}`}>
+                    {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} · Page {catalogPage} of {viewMode === 'grid' ? gridPages : tablePages}
+                  </div>
+                  <TableSortDropdown<CatalogSortKey>
+                    options={CATALOG_SORT_OPTIONS}
+                    currentSort={catalogSortKey}
+                    onSortChange={setCatalogSortKey}
+                  />
                 </div>
               )}
 

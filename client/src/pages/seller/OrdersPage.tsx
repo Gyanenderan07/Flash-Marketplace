@@ -14,7 +14,18 @@ import { StatusBadge, orderStatusVariant } from '@/components/seller/StatusBadge
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
 import { ConfirmModal } from '@/components/seller/ConfirmModal';
+import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
 import SellerShell from './SellerShell';
+
+export type OrderSortKey = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc' | 'customer_asc';
+
+export const ORDER_SORT_OPTIONS: SortOption<OrderSortKey>[] = [
+  { id: 'newest',       label: 'Newest First' },
+  { id: 'oldest',       label: 'Oldest First' },
+  { id: 'amount_desc',  label: 'Amount: High to Low' },
+  { id: 'amount_asc',   label: 'Amount: Low to High' },
+  { id: 'customer_asc', label: 'Buyer Name (A-Z)' },
+];
 
 const PAGE_SIZE = 20;
 const SPRING    = { type: 'spring', stiffness: 300, damping: 25 } as const;
@@ -48,6 +59,7 @@ export default function OrdersPage() {
   const [isLoading,    setIsLoading]    = useState(true);
   const [error,        setError]        = useState<string | null>(null);
   const [statusTab,    setStatusTab]    = useState<StatusTab>('all');
+  const [sortKey,      setSortKey]      = useState<OrderSortKey>('newest');
   const [page,         setPage]         = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<OrderExtended | null>(null);
   const [carrier,      setCarrier]      = useState('Delhivery Express');
@@ -72,15 +84,33 @@ export default function OrdersPage() {
   }, [load]);
 
   const filtered = useMemo(() => {
-    if (statusTab === 'all') return orders;
+    let list = orders;
     if (statusTab === 'processing') {
-      return orders.filter(o => {
+      list = orders.filter(o => {
         const s = (o.delivery_status || 'pending').toLowerCase();
         return s === 'processing' || s === 'awaiting_dispatch' || s === 'awaiting dispatch';
       });
+    } else if (statusTab !== 'all') {
+      list = orders.filter(o => (o.delivery_status || 'pending').toLowerCase() === statusTab);
     }
-    return orders.filter(o => (o.delivery_status || 'pending').toLowerCase() === statusTab);
-  }, [orders, statusTab]);
+    const copy = [...list];
+    copy.sort((a, b) => {
+      switch (sortKey) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'amount_desc':
+          return (Number(b.total_amount) || 0) - (Number(a.total_amount) || 0);
+        case 'amount_asc':
+          return (Number(a.total_amount) || 0) - (Number(b.total_amount) || 0);
+        case 'customer_asc':
+          return (a.customer_name || '').localeCompare(b.customer_name || '');
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+    return copy;
+  }, [orders, statusTab, sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -227,6 +257,20 @@ export default function OrdersPage() {
           </button>
         ))}
       </div>
+
+      {/* ── Stats & Sort bar ── */}
+      {!isLoading && (
+        <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          <span className={`text-xs font-semibold ${C.muted}`}>
+            {filtered.length} order{filtered.length !== 1 ? 's' : ''} · Page {page}/{totalPages}
+          </span>
+          <TableSortDropdown<OrderSortKey>
+            options={ORDER_SORT_OPTIONS}
+            currentSort={sortKey}
+            onSortChange={setSortKey}
+          />
+        </div>
+      )}
 
       {/* Content */}
       {error ? (

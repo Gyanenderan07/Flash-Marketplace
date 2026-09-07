@@ -23,9 +23,29 @@ import { EmptyState } from '@/components/seller/EmptyState';
 import { ConfirmModal } from '@/components/seller/ConfirmModal';
 import { BulkActionBar } from '@/components/seller/BulkActionBar';
 import { TieredPricingTable } from '@/components/seller/TieredPricingTable';
+import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
 import SellerShell from './SellerShell';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants & Sort Options ──────────────────────────────────────────────────
+export type CatalogSortKey =
+  | 'newest'
+  | 'oldest'
+  | 'price_asc'
+  | 'price_desc'
+  | 'stock_asc'
+  | 'stock_desc'
+  | 'name_asc';
+
+export const CATALOG_SORT_OPTIONS: SortOption<CatalogSortKey>[] = [
+  { id: 'newest',     label: 'Newest First' },
+  { id: 'oldest',     label: 'Oldest First' },
+  { id: 'price_asc',  label: 'Price: Low to High' },
+  { id: 'price_desc', label: 'Price: High to Low' },
+  { id: 'stock_asc',  label: 'Stock: Low to High' },
+  { id: 'stock_desc', label: 'Stock: High to Low' },
+  { id: 'name_asc',   label: 'Alphabetical (A-Z)' },
+];
+
 const PAGE_SIZE = 20;
 const SPRING = { type: 'spring', stiffness: 300, damping: 25 } as const;
 const FADE   = { duration: 0.2, ease: 'easeOut' } as const;
@@ -124,8 +144,7 @@ export default function ListingsPage() {
   const [search,     setSearch]     = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
   const [catFilter,  setCatFilter]  = useState('All');
-  const [sortBy,     setSortBy]     = useState<'name' | 'price' | 'stock' | 'created_at'>('created_at');
-  const [sortAsc,    setSortAsc]    = useState(false);
+  const [sortKey,    setSortKey]    = useState<CatalogSortKey>('newest');
 
   // ── Pagination ──
   const [page, setPage] = useState(1);
@@ -221,15 +240,26 @@ export default function ListingsPage() {
     if (statusFilter !== 'all') list = list.filter(p => (p.status || 'active') === statusFilter);
     if (catFilter !== 'All') list = list.filter(p => (p.category || '').toLowerCase() === catFilter.toLowerCase());
     list.sort((a, b) => {
-      let diff = 0;
-      if (sortBy === 'name')       diff = a.name.localeCompare(b.name);
-      else if (sortBy === 'price') diff = a.price - b.price;
-      else if (sortBy === 'stock') diff = (a.stock ?? 0) - (b.stock ?? 0);
-      else diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return sortAsc ? diff : -diff;
+      switch (sortKey) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'price_asc':
+          return (a.price || 0) - (b.price || 0);
+        case 'price_desc':
+          return (b.price || 0) - (a.price || 0);
+        case 'stock_asc':
+          return (a.stock ?? 0) - (b.stock ?? 0);
+        case 'stock_desc':
+          return (b.stock ?? 0) - (a.stock ?? 0);
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
     });
     return list;
-  }, [products, search, statusFilter, catFilter, sortBy, sortAsc]);
+  }, [products, search, statusFilter, catFilter, sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -535,19 +565,17 @@ export default function ListingsPage() {
         ))}
       </div>
 
-      {/* ── Stats bar ── */}
+      {/* ── Stats & Sort bar ── */}
       {!isLoading && (
-        <div className={`mb-3 flex items-center justify-between text-[10px] ${C.muted}`}>
-          <span className="font-semibold">
+        <div className={`mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5`}>
+          <span className={`text-xs font-semibold ${C.muted}`}>
             {filtered.length} product{filtered.length !== 1 ? 's' : ''} · Page {page}/{totalPages}
           </span>
-          <button
-            onClick={() => { setSortAsc(a => !a); }}
-            className={`inline-flex items-center gap-1 font-bold hover:text-[#CCFF00]`}
-          >
-            <ArrowUpDown size={11} />
-            Sort: {sortBy} {sortAsc ? '↑' : '↓'}
-          </button>
+          <TableSortDropdown<CatalogSortKey>
+            options={CATALOG_SORT_OPTIONS}
+            currentSort={sortKey}
+            onSortChange={setSortKey}
+          />
         </div>
       )}
 

@@ -10,20 +10,20 @@ interface StatusBadgeProps {
 }
 
 const VARIANTS: Record<BadgeVariant, string> = {
-  success: 'border-green-500/20 bg-green-500/10 text-green-400',
-  warning: 'border-amber-500/20 bg-amber-500/10 text-amber-400',
-  danger:  'border-red-500/20 bg-red-500/10 text-red-400',
-  info:    'border-blue-500/20 bg-blue-500/10 text-blue-400',
-  accent:  'border-[#CCFF00]/20 bg-[#CCFF00]/10 text-[#CCFF00]',
-  default: 'border-neutral-700 bg-neutral-800/50 text-neutral-400',
+  success: 'border-emerald-300 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold',
+  warning: 'border-amber-300 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-bold',
+  danger:  'border-red-300 dark:border-red-800/50 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-bold',
+  info:    'border-blue-300 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 font-bold',
+  accent:  'border-lime-300 dark:border-[#CCFF00]/20 bg-lime-50 dark:bg-[#CCFF00]/10 text-lime-800 dark:text-[#CCFF00] font-bold',
+  default: 'border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800/50 text-neutral-700 dark:text-neutral-400 font-bold',
 };
 
 const DOT_COLORS: Record<BadgeVariant, string> = {
-  success: 'bg-green-400',
-  warning: 'bg-amber-400',
-  danger:  'bg-red-400',
-  info:    'bg-blue-400',
-  accent:  'bg-[#CCFF00]',
+  success: 'bg-emerald-600 dark:bg-emerald-400',
+  warning: 'bg-amber-600 dark:bg-amber-400',
+  danger:  'bg-red-600 dark:bg-red-400',
+  info:    'bg-blue-600 dark:bg-blue-400',
+  accent:  'bg-lime-600 dark:bg-[#CCFF00]',
   default: 'bg-neutral-500',
 };
 

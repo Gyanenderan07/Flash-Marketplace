@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, CartesianGrid, Cell, PieChart, Pie,
-  ResponsiveContainer, Tooltip, XAxis, YAxis
+  ResponsiveContainer, Tooltip, XAxis, YAxis, Legend
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,10 +10,10 @@ import {
   ArrowUpRight,
   BarChart3,
   CheckCircle2,
-  Clock,
   ExternalLink,
   Layers,
   Package,
+  PieChart as PieIcon,
   RefreshCw,
   Sparkles,
   TrendingUp,
@@ -23,14 +23,23 @@ import {
 import { Link } from 'wouter';
 import { supabase, getExtendedOrders, getExtendedCatalog, type OrderExtended, type ProductExtended } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
-import { SkeletonCard, SkeletonTable } from '@/components/seller/SkeletonTable';
+import { SkeletonCard } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
+import { StatusBadge } from '@/components/seller/StatusBadge';
 import SellerShell from './SellerShell';
 
 type DateRange = '7' | '30' | '90' | 'all';
+type ChartMode = 'revenue' | 'comparison' | 'inventory_share' | 'depletion_radar';
 
-const NEON = '#CCFF00';
-const BORDER_DARK = '#1F2430';
+const DONUT_COLORS = [
+  '#CCFF00',
+  '#38BDF8',
+  '#A855F7',
+  '#F59E0B',
+  '#EC4899',
+  '#10B981',
+  '#6366F1',
+];
 
 function formatINR(v: number) {
   return '₹' + Math.round(v).toLocaleString('en-IN');
@@ -44,13 +53,12 @@ function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; p
 
   useEffect(() => {
     const start = 0;
-    const duration = 750; // ms
+    const duration = 700;
     const startTime = performance.now();
 
     const update = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // easeOutExpo
       const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       const current = Math.round(start + (value - start) * ease);
       setDisplay(current);
@@ -78,6 +86,7 @@ export default function AnalyticsPage() {
   const [products,  setProducts]  = useState<ProductExtended[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [range,     setRange]     = useState<DateRange>('30');
+  const [chartMode, setChartMode] = useState<ChartMode>('revenue');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ── Load live data from shared Supabase instance ──
@@ -99,16 +108,15 @@ export default function AnalyticsPage() {
   // ── Real-Time Supabase Pipelines ──
   useEffect(() => {
     load();
-
     const orderChannel = supabase
-      .channel('analytics-orders-live-rt')
+      .channel('analytics-orders-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         load(true);
       })
       .subscribe();
 
     const productChannel = supabase
-      .channel('analytics-products-live-rt')
+      .channel('analytics-products-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         load(true);
       })
@@ -120,11 +128,11 @@ export default function AnalyticsPage() {
     };
   }, [load]);
 
-  // ── Filter Orders by Date Range ──
+  // ── Date Range Filtering ──
   const filteredOrders = useMemo(() => {
     if (range === 'all') return orders;
     const days = parseInt(range, 10);
-    const cutoff = Date.now() - days * 86400000;
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
     return orders.filter(o => new Date(o.created_at).getTime() >= cutoff);
   }, [orders, range]);
 
@@ -161,12 +169,12 @@ export default function AnalyticsPage() {
     return counts;
   }, [filteredOrders]);
 
-  // ── 3. Active SKU Inventory Velocity ──
+  // ── 3. Active SKU Inventory Units ──
   const totalStockUnits = useMemo(() => {
     return products.reduce((acc, p) => acc + (p.stock ?? 0), 0);
   }, [products]);
 
-  // ── 4. Stock Depletion Tracking (Radar of products near/below threshold) ──
+  // ── 4. Stock Depletion Tracking ──
   const depletionItems = useMemo(() => {
     return products
       .filter(p => (p.stock ?? 0) <= (p.low_stock_threshold || 5))
@@ -199,7 +207,7 @@ export default function AnalyticsPage() {
     }));
   }, [filteredOrders, range]);
 
-  // ── Category Distribution ──
+  // ── Category Distribution (Units vs. Revenue) ──
   const categoryDistribution = useMemo(() => {
     const map: Record<string, { units: number; revenue: number }> = {};
 
@@ -222,16 +230,31 @@ export default function AnalyticsPage() {
     return Object.entries(map)
       .map(([name, v]) => ({ name, units: v.units, revenue: Math.round(v.revenue) }))
       .sort((a, b) => b.units - a.units)
-      .slice(0, 6);
+      .slice(0, 7);
   }, [products, filteredOrders]);
 
+  // ── Category Share for Donut Chart ──
+  const categoryShare = useMemo(() => {
+    const sumUnits = categoryDistribution.reduce((acc, c) => acc + c.units, 0) || 1;
+    return categoryDistribution.map((c, i) => ({
+      ...c,
+      percentage: Math.max(1, Math.round((c.units / sumUnits) * 100)),
+      color: DONUT_COLORS[i % DONUT_COLORS.length],
+    }));
+  }, [categoryDistribution]);
+
+  // ── Design Tokens ──
   const C = {
-    card:    isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:    isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
-    text:    isDark ? 'text-white' : 'text-gray-900',
-    muted:   isDark ? 'text-neutral-400' : 'text-gray-500',
-    divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
+    card:    isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-neutral-200 bg-white shadow-sm',
+    well:    isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-neutral-200 bg-neutral-50',
+    text:    isDark ? 'text-white' : 'text-neutral-900',
+    muted:   isDark ? 'text-neutral-400' : 'text-neutral-500',
+    divider: isDark ? 'border-[#1F2430]' : 'border-neutral-200',
   };
+
+  const primaryAccent = isDark ? '#CCFF00' : '#15803D';
+  const gridStroke    = isDark ? '#1F2430' : '#E5E7EB';
+  const axisText      = isDark ? '#9CA3AF' : '#6B7280';
 
   const tooltipStyle = {
     backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
@@ -239,15 +262,22 @@ export default function AnalyticsPage() {
     borderRadius: '12px',
     color: isDark ? '#FFFFFF' : '#111827',
     fontSize: '11px',
-    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+    boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.7)' : '0 10px 30px rgba(0,0,0,0.1)',
   };
+
+  const CHART_MODES = [
+    { id: 'revenue',         label: '📈 Revenue Trend',       desc: 'Area Trendline' },
+    { id: 'comparison',      label: '📊 Category Comparison', desc: 'Units vs Sales' },
+    { id: 'inventory_share', label: '🍩 Inventory Share',     desc: 'Stock Donut Ring' },
+    { id: 'depletion_radar', label: '⚠️ Restock Radar',       desc: `${depletionItems.length} Low Stock` },
+  ] as const;
 
   return (
     <SellerShell
       title="Analytics Hub"
       breadcrumbs={[
         { label: 'Seller Central', href: '/seller/dashboard' },
-        { label: 'Real-Time Buyer Hub Analytics' }
+        { label: 'Real-Time Analytics & Data Suite' }
       ]}
     >
       <div className="space-y-7">
@@ -255,17 +285,17 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 dark:border-[#1F2430] pb-5">
           <div>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-[#15803D] dark:bg-[#CCFF00] shadow-[0_0_8px_#CCFF00] animate-pulse" />
               <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>
                 Live Shared Instance: Flash-DB
               </span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${C.text}`}>
-              Real-Time Buyer Hub Analytics
+              Real-Time Merchant Analytics
             </h1>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Interactive Date Range Switcher */}
             <div className={`flex items-center rounded-full border p-1 ${C.well}`}>
               {(['7', '30', '90', 'all'] as DateRange[]).map(r => (
@@ -274,7 +304,7 @@ export default function AnalyticsPage() {
                   onClick={() => setRange(r)}
                   className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
                     range === r
-                      ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.35)]'
+                      ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.35)] font-extrabold'
                       : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
                   }`}
                 >
@@ -288,10 +318,10 @@ export default function AnalyticsPage() {
               whileTap={{ rotate: 360 }}
               onClick={() => load(true)}
               disabled={isRefreshing}
-              className={`rounded-full border p-2 transition ${C.well} ${C.muted} hover:text-[#CCFF00]`}
+              className={`rounded-full border p-2 transition ${C.well} ${C.muted} hover:text-neutral-900 dark:hover:text-[#CCFF00]`}
               title="Refresh Analytics"
             >
-              <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-[#CCFF00]' : ''} />
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-[#15803D] dark:text-[#CCFF00]' : ''} />
             </motion.button>
           </div>
         </div>
@@ -299,30 +329,42 @@ export default function AnalyticsPage() {
         {/* ── 4 REAL-TIME HIGH-VELOCITY METRIC CARDS ── */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Card 1: Gross Revenue Velocity */}
-          <div className={`relative overflow-hidden rounded-2xl border p-5 ${C.card} border-[#CCFF00]/20 bg-[#CCFF00]/5`}>
+          <motion.div
+            whileHover={{ y: -2 }}
+            onClick={() => setChartMode('revenue')}
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
+              chartMode === 'revenue' ? 'ring-2 ring-[#CCFF00]' : ''
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#CCFF00]">
-                Gross Revenue Velocity
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-[#CCFF00]">
+                Gross Revenue
               </span>
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#CCFF00]/20 text-[#CCFF00]">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 dark:bg-[#CCFF00]/20 text-emerald-800 dark:text-[#CCFF00]">
                 <TrendingUp size={14} />
               </span>
             </div>
-            <div className="mt-4 text-2xl sm:text-3xl text-[#CCFF00]">
+            <div className="mt-4 text-2xl sm:text-3xl text-emerald-700 dark:text-[#CCFF00]">
               <AnimatedCounter value={grossRevenueVelocity} prefix="₹" />
             </div>
-            <p className="mt-1 text-[11px] text-neutral-400">
-              Aggregated from live wholesale buyer orders ({range === 'all' ? 'all-time' : `last ${range} days`}).
+            <p className={`mt-1 text-[11px] ${C.muted}`}>
+              Live orders ({range === 'all' ? 'all-time' : `last ${range} days`}).
             </p>
-          </div>
+          </motion.div>
 
           {/* Card 2: Order Fulfillment Velocity */}
-          <div className={`rounded-2xl border p-5 ${C.card}`}>
+          <motion.div
+            whileHover={{ y: -2 }}
+            onClick={() => setChartMode('comparison')}
+            className={`cursor-pointer rounded-2xl border p-5 transition-all ${C.card} ${
+              chartMode === 'comparison' ? 'ring-2 ring-[#CCFF00]' : ''
+            }`}
+          >
             <div className="flex items-center justify-between">
               <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>
                 Fulfillment Velocity
               </span>
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/10 text-blue-400">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/10 text-blue-500 dark:text-blue-400">
                 <Truck size={14} />
               </span>
             </div>
@@ -330,25 +372,31 @@ export default function AnalyticsPage() {
               <AnimatedCounter value={fulfillmentVelocity.total} suffix=" Orders" />
             </div>
             <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[9px] font-mono font-bold text-amber-400">
+              <span className="rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/50 px-2 py-0.5 text-[9px] font-mono font-bold text-amber-700 dark:text-amber-400">
                 {fulfillmentVelocity.pending} New
               </span>
-              <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[9px] font-mono font-bold text-purple-400">
+              <span className="rounded-full bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/50 px-2 py-0.5 text-[9px] font-mono font-bold text-purple-700 dark:text-purple-400">
                 {fulfillmentVelocity.awaiting_dispatch} Packing
               </span>
-              <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-mono font-bold text-blue-400">
+              <span className="rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800/50 px-2 py-0.5 text-[9px] font-mono font-bold text-blue-700 dark:text-blue-400">
                 {fulfillmentVelocity.shipped} Shipped
               </span>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Card 3: Active SKU Inventory Velocity */}
-          <div className={`rounded-2xl border p-5 ${C.card}`}>
+          {/* Card 3: Active SKU Inventory Units */}
+          <motion.div
+            whileHover={{ y: -2 }}
+            onClick={() => setChartMode('inventory_share')}
+            className={`cursor-pointer rounded-2xl border p-5 transition-all ${C.card} ${
+              chartMode === 'inventory_share' ? 'ring-2 ring-[#CCFF00]' : ''
+            }`}
+          >
             <div className="flex items-center justify-between">
               <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>
-                Active SKU Inventory
+                Active Catalog Units
               </span>
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-neutral-800 text-neutral-300">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300">
                 <Package size={14} />
               </span>
             </div>
@@ -358,193 +406,426 @@ export default function AnalyticsPage() {
             <p className={`mt-1 text-[11px] ${C.muted}`}>
               {totalStockUnits.toLocaleString('en-IN')} total units across {products.length} live catalog items.
             </p>
-          </div>
+          </motion.div>
 
           {/* Card 4: Stock Depletion Radar Alert */}
-          <div className={`rounded-2xl border p-5 ${C.card} ${depletionItems.length > 0 ? 'border-amber-500/30 bg-amber-500/5' : ''}`}>
+          <motion.div
+            whileHover={{ y: -2 }}
+            onClick={() => setChartMode('depletion_radar')}
+            className={`cursor-pointer rounded-2xl border p-5 transition-all ${C.card} ${
+              chartMode === 'depletion_radar' ? 'ring-2 ring-amber-400' : ''
+            } ${depletionItems.length > 0 ? 'border-amber-400/40 bg-amber-50/50 dark:bg-amber-500/5' : ''}`}
+          >
             <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${depletionItems.length > 0 ? 'text-amber-400' : C.muted}`}>
-                Depletion Radar
+              <span className={`text-[10px] font-black uppercase tracking-widest ${depletionItems.length > 0 ? 'text-amber-700 dark:text-amber-400' : C.muted}`}>
+                Restock Radar
               </span>
-              <span className={`grid h-7 w-7 place-items-center rounded-lg ${depletionItems.length > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400'}`}>
+              <span className={`grid h-7 w-7 place-items-center rounded-lg ${depletionItems.length > 0 ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'}`}>
                 {depletionItems.length > 0 ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
               </span>
             </div>
-            <div className={`mt-4 text-2xl sm:text-3xl font-black ${depletionItems.length > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+            <div className={`mt-4 text-2xl sm:text-3xl font-black ${depletionItems.length > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
               <AnimatedCounter value={depletionItems.length} suffix=" Low Stock" />
             </div>
             <p className={`mt-1 text-[11px] ${C.muted}`}>
               {depletionItems.length > 0
-                ? `${depletionItems.length} SKU(s) nearing or below threshold (<= 5 units)`
+                ? `${depletionItems.length} SKU(s) nearing or below threshold (≤ 5 units)`
                 : 'All catalog SKUs adequately stocked above threshold.'}
             </p>
+          </motion.div>
+        </div>
+
+        {/* ── INTERACTIVE CHART MODE SWITCHER ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none p-1.5 rounded-2xl bg-neutral-200/80 dark:bg-[#14171F]">
+            {CHART_MODES.map(mode => {
+              const isSelected = chartMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => setChartMode(mode.id)}
+                  className={`relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-md font-extrabold'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>{mode.label}</span>
+                  {isSelected && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#15803D] dark:bg-[#CCFF00]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className={`text-xs font-semibold ${C.muted} hidden md:block`}>
+            Showing: <strong className={C.text}>{CHART_MODES.find(m => m.id === chartMode)?.label}</strong>
           </div>
         </div>
 
-        {/* ── CHARTS SECTION ── */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Revenue Velocity Chart (2 cols) */}
-          <div className={`rounded-2xl border p-6 lg:col-span-2 ${C.card}`}>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>Velocity Trendline</span>
-                <h3 className={`text-base font-extrabold tracking-tight ${C.text}`}>Live Revenue Velocity Curve</h3>
-              </div>
-              <span className="flex items-center gap-1 text-[10px] font-mono text-[#CCFF00]">
-                <Sparkles size={12} /> Live Aggregation
-              </span>
-            </div>
-
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueTrendSeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="neonGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={NEON} stopOpacity={0.4} />
-                      <stop offset="95%" stopColor={NEON} stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={BORDER_DARK} vertical={false} />
-                  <XAxis dataKey="date" stroke="#6B7280" fontSize={10} tickLine={false} />
-                  <YAxis
-                    stroke="#6B7280"
-                    fontSize={10}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={v => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-                  />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(val: any) => [formatINR(Number(val || 0)), 'Revenue']}
-                    labelFormatter={l => `Date: ${l}`}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke={NEON}
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#neonGlow)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Category Distribution Bar Chart (1 col) */}
-          <div className={`rounded-2xl border p-6 ${C.card}`}>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>Inventory Spread</span>
-                <h3 className={`text-base font-extrabold tracking-tight ${C.text}`}>Category Stock Velocity</h3>
-              </div>
-            </div>
-
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryDistribution} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={BORDER_DARK} horizontal={false} />
-                  <XAxis type="number" stroke="#6B7280" fontSize={9} tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="name" stroke="#9CA3AF" fontSize={10} tickLine={false} width={75} />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(val: any) => [`${Number(val || 0)} units`, 'Live Stock']}
-                  />
-                  <Bar dataKey="units" fill={NEON} radius={[0, 8, 8, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* ── STOCK DEPLETION RADAR PANEL ── */}
-        <div className={`rounded-2xl border p-6 ${C.card}`}>
-          <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>
-                  Stock Depletion Tracking Radar
-                </span>
-              </div>
-              <h3 className={`text-base font-extrabold tracking-tight ${C.text}`}>
-                Critical &amp; Low-Stock SKU Monitor (Stock &le; 5 units)
-              </h3>
-            </div>
-            <Link
-              href="/seller/inventory"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#CCFF00] hover:underline"
+        {/* ── ACTIVE VISUALIZATION CANVAS ── */}
+        <AnimatePresence mode="wait">
+          {/* ════ 1. REVENUE AREA CHART ════ */}
+          {chartMode === 'revenue' && (
+            <motion.div
+              key="revenue-chart"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className={`rounded-3xl border p-6 sm:p-8 ${C.card}`}
             >
-              <span>Manage in Inventory Stepper</span>
-              <ArrowUpRight size={13} />
-            </Link>
-          </div>
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#15803D] dark:text-[#CCFF00]">
+                      Volume Trajectory
+                    </span>
+                    <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-[9px] font-bold text-neutral-600 dark:text-neutral-300">
+                      Live Bezier Stream
+                    </span>
+                  </div>
+                  <h2 className={`text-xl font-black tracking-tight ${C.text} mt-0.5`}>
+                    Gross Revenue Trendline
+                  </h2>
+                  <p className={`text-xs ${C.muted} mt-0.5`}>
+                    Daily wholesale order gross billing across all storefront purchases.
+                  </p>
+                </div>
 
-          {depletionItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <CheckCircle2 size={32} className="text-[#52E82E] mb-2" />
-              <div className={`text-sm font-bold ${C.text}`}>All stock levels optimal</div>
-              <p className={`text-xs ${C.muted} mt-0.5`}>
-                No products are currently at or below the critical replenishment threshold.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className={`border-b border-neutral-200 dark:border-[#1F2430] text-[9px] font-black uppercase tracking-widest ${C.muted}`}>
-                  <tr>
-                    <th className="pb-3">SKU &amp; Product</th>
-                    <th className="pb-3">Category</th>
-                    <th className="pb-3">Price</th>
-                    <th className="pb-3">Stock Gauge</th>
-                    <th className="pb-3 text-right">Quick Restock</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-[#1F2430]/60">
-                  {depletionItems.slice(0, 8).map(item => {
-                    const pct = Math.min(100, Math.round(((item.stock ?? 0) / (item.low_stock_threshold || 5)) * 100));
-                    const isCritical = (item.stock ?? 0) === 0;
+                <div className="flex items-center gap-3">
+                  <div className={`rounded-xl border px-3.5 py-2 text-right ${C.well}`}>
+                    <div className={`text-[9px] uppercase font-bold ${C.muted}`}>Period Gross</div>
+                    <div className="font-mono text-sm font-extrabold text-emerald-700 dark:text-[#CCFF00]">
+                      {formatINR(grossRevenueVelocity)}
+                    </div>
+                  </div>
+                  <div className={`rounded-xl border px-3.5 py-2 text-right ${C.well}`}>
+                    <div className={`text-[9px] uppercase font-bold ${C.muted}`}>Average Order</div>
+                    <div className={`font-mono text-sm font-extrabold ${C.text}`}>
+                      {formatINR(filteredOrders.length ? grossRevenueVelocity / filteredOrders.length : 0)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueTrendSeries} margin={{ top: 10, right: 15, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="revenueGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={isDark ? '#CCFF00' : '#15803D'} stopOpacity={isDark ? 0.45 : 0.3} />
+                        <stop offset="95%" stopColor={isDark ? '#CCFF00' : '#15803D'} stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                    <XAxis dataKey="date" stroke={axisText} fontSize={11} tickLine={false} />
+                    <YAxis
+                      stroke={axisText}
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={v => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(val: any) => [formatINR(Number(val || 0)), 'Gross Revenue']}
+                      labelFormatter={l => `Date: ${l}`}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke={isDark ? '#CCFF00' : '#15803D'}
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#revenueGlow)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ════ 2. CATEGORY COMPARISON BAR CHART ════ */}
+          {chartMode === 'comparison' && (
+            <motion.div
+              key="comparison-chart"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className={`rounded-3xl border p-6 sm:p-8 ${C.card}`}
+            >
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#15803D] dark:text-[#CCFF00]">
+                    Cross-Category Correlation
+                  </span>
+                  <h2 className={`text-xl font-black tracking-tight ${C.text} mt-0.5`}>
+                    Inventory Units vs. Sales Velocity
+                  </h2>
+                  <p className={`text-xs ${C.muted} mt-0.5`}>
+                    Side-by-side comparison of active stock depth vs gross revenue generated per category.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs font-bold">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-sm bg-[#15803D] dark:bg-[#CCFF00]" />
+                    <span className={C.text}>Stock Units</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-sm bg-sky-500" />
+                    <span className={C.text}>Sales Velocity (₹)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryDistribution} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+                    <XAxis dataKey="name" stroke={axisText} fontSize={11} tickLine={false} />
+                    <YAxis
+                      yAxisId="left"
+                      stroke={axisText}
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={v => `${v} u`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="#38BDF8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={v => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(val: any, name: string) => [
+                        name === 'units' ? `${Number(val || 0)} units` : formatINR(Number(val || 0)),
+                        name === 'units' ? 'Inventory Units' : 'Sales Revenue'
+                      ]}
+                    />
+                    <Bar yAxisId="left" dataKey="units" fill={isDark ? '#CCFF00' : '#15803D'} radius={[6, 6, 0, 0]} name="units" />
+                    <Bar yAxisId="right" dataKey="revenue" fill="#38BDF8" radius={[6, 6, 0, 0]} name="revenue" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ════ 3. INVENTORY SHARE RING / DONUT CHART ════ */}
+          {chartMode === 'inventory_share' && (
+            <motion.div
+              key="inventory-share-chart"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className={`rounded-3xl border p-6 sm:p-8 ${C.card}`}
+            >
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#15803D] dark:text-[#CCFF00]">
+                  Portfolio Composition
+                </span>
+                <h2 className={`text-xl font-black tracking-tight ${C.text} mt-0.5`}>
+                  Category Stock Distribution &amp; Share
+                </h2>
+                <p className={`text-xs ${C.muted} mt-0.5`}>
+                  Proportional unit allocation breakdown across all active warehouse SKUs.
+                </p>
+              </div>
+
+              <div className="grid gap-8 lg:grid-cols-2 items-center">
+                {/* Donut Chart with Centered Total Counter */}
+                <div className="relative h-72 w-full flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryShare}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={75}
+                        outerRadius={110}
+                        paddingAngle={4}
+                        dataKey="units"
+                        nameKey="name"
+                      >
+                        {categoryShare.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(val: any, name: string) => [
+                          `${Number(val || 0)} units (${Math.round((Number(val || 0) / (totalStockUnits || 1)) * 100)}%)`,
+                          name
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Centered Total Units Count */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-3xl font-black font-mono tracking-tight text-neutral-900 dark:text-white">
+                      {totalStockUnits.toLocaleString('en-IN')}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                      Total Units
+                    </span>
+                  </div>
+                </div>
+
+                {/* Data Legend & Proportional Progress Rows */}
+                <div className="space-y-3">
+                  {categoryShare.map((cat, i) => (
+                    <div
+                      key={cat.name}
+                      className={`flex flex-col gap-1.5 rounded-2xl border p-3.5 transition-colors ${C.well}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="h-3 w-3 rounded-full shrink-0"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          <span className={`text-xs font-bold ${C.text}`}>{cat.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs font-mono font-bold ${C.text}`}>
+                            {cat.units.toLocaleString('en-IN')} units
+                          </span>
+                          <span className="font-mono text-xs font-extrabold text-neutral-900 dark:text-[#CCFF00]">
+                            {cat.percentage}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${cat.percentage}%`, backgroundColor: cat.color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ════ 4. RESTOCK RADAR / DEPLETION GAUGES ════ */}
+          {chartMode === 'depletion_radar' && (
+            <motion.div
+              key="depletion-radar-chart"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className={`rounded-3xl border p-6 sm:p-8 ${C.card}`}
+            >
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                      Depletion Risk Radar
+                    </span>
+                  </div>
+                  <h2 className={`text-xl font-black tracking-tight ${C.text} mt-0.5`}>
+                    Restock Threshold Gauges (Stock ≤ 5 units)
+                  </h2>
+                  <p className={`text-xs ${C.muted} mt-0.5`}>
+                    Catalog products currently at critical risk of stockout and losing buyer buy-box ranking.
+                  </p>
+                </div>
+
+                <Link
+                  href="/seller/inventory"
+                  className="inline-flex items-center gap-2 rounded-full bg-neutral-900 dark:bg-black px-5 py-2.5 text-xs font-black uppercase tracking-widest text-[#CCFF00] shadow-[0_0_12px_rgba(204,255,0,0.25)] hover:scale-105 transition active:scale-95"
+                >
+                  <span>Inventory Stepper</span>
+                  <ArrowUpRight size={13} />
+                </Link>
+              </div>
+
+              {depletionItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <CheckCircle2 size={36} className="text-emerald-500 mb-2" />
+                  <div className={`text-base font-bold ${C.text}`}>All Stock Levels Optimal</div>
+                  <p className={`text-xs ${C.muted} mt-1 max-w-sm`}>
+                    Zero items currently at or below the critical replenishment threshold.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {depletionItems.map(item => {
+                    const threshold = item.low_stock_threshold || 5;
+                    const stock = item.stock ?? 0;
+                    const pct = Math.min(100, Math.round((stock / threshold) * 100));
+                    const isZero = stock === 0;
 
                     return (
-                      <tr key={item.id} className="hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition">
-                        <td className="py-3">
-                          <div className={`font-bold ${C.text}`}>{item.name}</div>
-                          <div className="text-[10px] font-mono text-neutral-500">{item.sku || 'No SKU'}</div>
-                        </td>
-                        <td className="py-3 text-neutral-600 dark:text-neutral-400">{item.category}</td>
-                        <td className="py-3 font-mono font-bold text-neutral-900 dark:text-white">{formatINR(item.price)}</td>
-                        <td className="py-3 w-48">
+                      <div
+                        key={item.id}
+                        className={`flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border p-4 transition-all ${C.well} ${
+                          isZero ? 'border-red-400/40 bg-red-50/40 dark:bg-red-950/20' : ''
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <div className="h-2 flex-1 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-300 ${
-                                  isCritical ? 'bg-red-500' : 'bg-amber-400'
-                                }`}
-                                style={{ width: `${Math.max(8, pct)}%` }}
-                              />
-                            </div>
-                            <span className={`font-mono font-bold text-[10px] ${isCritical ? 'text-red-400' : 'text-amber-400'}`}>
-                              {item.stock ?? 0} left
-                            </span>
+                            <span className={`text-sm font-extrabold truncate ${C.text}`}>{item.name}</span>
+                            <StatusBadge
+                              label={isZero ? 'Out of Stock' : 'Low Stock'}
+                              variant={isZero ? 'danger' : 'warning'}
+                            />
                           </div>
-                        </td>
-                        <td className="py-3 text-right">
-                          <Link
-                            href="/seller/inventory"
-                            className="inline-flex items-center gap-1 rounded-full border border-[#1F2430] bg-[#12161F] px-3 py-1 text-[10px] font-bold text-neutral-300 hover:border-[#CCFF00] hover:text-[#CCFF00] transition"
-                          >
-                            <span>Restock</span>
-                            <ArrowUpRight size={10} />
-                          </Link>
-                        </td>
-                      </tr>
+                          <div className="flex items-center gap-3 mt-1 text-[11px] font-mono text-neutral-500">
+                            <span>SKU: {item.sku || 'N/A'}</span>
+                            <span>·</span>
+                            <span>Category: {item.category}</span>
+                            <span>·</span>
+                            <span className="font-bold text-neutral-900 dark:text-white">{formatINR(item.price)}</span>
+                          </div>
+                        </div>
+
+                        {/* Gauge Meter */}
+                        <div className="w-full md:w-64 flex flex-col gap-1">
+                          <div className="flex justify-between text-[11px] font-mono font-bold">
+                            <span className={isZero ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'}>
+                              {stock} / {threshold} units
+                            </span>
+                            <span className={C.muted}>{pct}% threshold</span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                isZero ? 'bg-red-500' : 'bg-amber-400'
+                              }`}
+                              style={{ width: `${Math.max(5, pct)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <Link
+                          href="/seller/inventory"
+                          className="inline-flex items-center justify-center gap-1 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:border-[#15803D] dark:hover:border-[#CCFF00] hover:text-[#15803D] dark:hover:text-[#CCFF00] transition whitespace-nowrap"
+                        >
+                          <span>Restock SKU</span>
+                          <ArrowUpRight size={12} />
+                        </Link>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              )}
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
     </SellerShell>
   );
