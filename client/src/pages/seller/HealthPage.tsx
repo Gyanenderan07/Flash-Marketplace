@@ -4,6 +4,7 @@ import { AlertCircle, Shield, CheckCircle2, XCircle, AlertTriangle } from 'lucid
 import { toast } from 'sonner';
 import { getSeller, getExtendedOrders, getQuotes, type Seller, type OrderExtended, type Quote } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { SkeletonCard } from '@/components/seller/SkeletonTable';
 import SellerShell from './SellerShell';
@@ -19,6 +20,8 @@ interface HealthMetric {
 
 export default function HealthPage() {
   const { isDark } = useTheme();
+  const { sellerId, user } = useAuth();
+  const effectiveSellerId = sellerId || user?.id || null;
   const [seller,   setSeller]   = useState<Seller | null>(null);
   const [orders,   setOrders]   = useState<OrderExtended[]>([]);
   const [quotes,   setQuotes]   = useState<Quote[]>([]);
@@ -27,12 +30,16 @@ export default function HealthPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [s, o, q] = await Promise.all([getSeller(), getExtendedOrders(), getQuotes()]);
+      const [s, o, q] = await Promise.all([
+        getSeller(effectiveSellerId),
+        getExtendedOrders(effectiveSellerId),
+        getQuotes()
+      ]);
       setSeller(s); setOrders(o); setQuotes(q);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [effectiveSellerId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -107,8 +114,8 @@ export default function HealthPage() {
   const accountStatus = healthScore >= 90 ? 'good' : healthScore >= 70 ? 'warning' : 'suspended';
 
   const C = {
-    card:   isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
+    card:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:   isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
     text:   isDark ? 'text-white'  : 'text-gray-900',
     muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',

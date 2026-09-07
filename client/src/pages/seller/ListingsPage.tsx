@@ -134,7 +134,8 @@ function productStatusVariant(s: string) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ListingsPage() {
   const { isDark } = useTheme();
-  const { sellerId } = useAuth();
+  const { sellerId, user } = useAuth();
+  const effectiveSellerId = sellerId || user?.id || null;
 
   // ── Data ──
   const [products,   setProducts]   = useState<ProductExtended[]>([]);
@@ -208,7 +209,7 @@ export default function ListingsPage() {
     setIsRefreshing(true);
     setError(null);
     try {
-      const data = await getExtendedCatalog(sellerId);
+      const data = await getExtendedCatalog(effectiveSellerId);
       setProducts(data);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to load catalog';
@@ -217,16 +218,16 @@ export default function ListingsPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [sellerId]);
+  }, [effectiveSellerId]);
 
   useEffect(() => {
     loadProducts();
     const ch = supabase
-      .channel(`listings-rt-${sellerId || 'global'}`)
+      .channel(`listings-rt-${effectiveSellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadProducts(true))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [loadProducts, sellerId]);
+  }, [loadProducts, effectiveSellerId]);
 
   // ── Filtered + sorted + paginated ──
   const filtered = useMemo(() => {
@@ -369,15 +370,15 @@ export default function ListingsPage() {
       };
 
       if (editProduct?.id) {
-        const updated: ProductExtended = { ...editProduct, ...payload, seller_id: sellerId || editProduct.seller_id };
+        const updated: ProductExtended = { ...editProduct, ...payload, seller_id: effectiveSellerId || editProduct.seller_id };
         setProducts(prev => prev.map(p => p.id === editProduct.id ? updated : p));
         setDrawerOpen(false);
-        await updateProductInCatalog(editProduct.id, updated as Parameters<typeof updateProductInCatalog>[1], sellerId);
+        await updateProductInCatalog(editProduct.id, updated as Parameters<typeof updateProductInCatalog>[1], effectiveSellerId);
         await upsertPriceTiers(editProduct.id, priceTiers);
         toast.success(`"${updated.name}" updated`);
       } else {
         setDrawerOpen(false);
-        const inserted = await insertProductToCatalog(payload, sellerId);
+        const inserted = await insertProductToCatalog(payload, effectiveSellerId);
         if (inserted?.id) {
           await upsertPriceTiers(inserted.id, priceTiers);
           setProducts(prev => [inserted as ProductExtended, ...prev]);
@@ -459,8 +460,8 @@ export default function ListingsPage() {
 
   // ── CSS helpers ──
   const C = {
-    card:   isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
+    card:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:   isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
     input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white placeholder:text-neutral-600 focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#CCFF00]',
     label:  isDark ? 'text-neutral-400' : 'text-gray-500',
     th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
@@ -551,20 +552,22 @@ export default function ListingsPage() {
       </div>
 
       {/* ── Category filtering rail without ugly scrollbar ── */}
-      <div className="w-full flex items-center gap-2 overflow-x-auto py-2 px-1 scrollbar-none no-scrollbar touch-pan-x select-none mb-4">
-        {['All', ...VALID_CATEGORIES].map(cat => (
-          <button
-            key={cat}
-            onClick={() => { setCatFilter(cat); setPage(1); }}
-            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
-              catFilter === cat
-                ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)] font-extrabold'
-                : 'bg-neutral-200/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="w-full relative flex items-center mb-5">
+        <div className="w-full flex items-center gap-2 overflow-x-auto py-2.5 px-2 scroll-smooth no-scrollbar touch-pan-x select-none">
+          {['All', ...VALID_CATEGORIES].map(cat => (
+            <button
+              key={cat}
+              onClick={() => { setCatFilter(cat); setPage(1); }}
+              className={`shrink-0 whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-150 active:scale-95 cursor-pointer ${
+                catFilter === cat
+                  ? 'bg-[#CCFF00] text-black shadow-[0_0_14px_rgba(204,255,0,0.35)] font-extrabold'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700/60'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Stats & Sort bar ── */}
@@ -874,7 +877,7 @@ export default function ListingsPage() {
                           }`}
                         />
                         <span className={`mt-1 block text-[10px] ${C.muted}`}>
-                          These URLs populate `hover_images` array for interactive hover previews on the buyer storefront.
+                          These images are displayed when buyers hover or swipe through your product gallery on the storefront.
                         </span>
                       </div>
                     </motion.div>

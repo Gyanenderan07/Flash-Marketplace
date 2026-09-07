@@ -24,7 +24,8 @@ function formatINR(v: number) {
 
 export default function InventoryPage() {
   const { isDark } = useTheme();
-  const { sellerId } = useAuth();
+  const { sellerId, user } = useAuth();
+  const effectiveSellerId = sellerId || user?.id || null;
   const [products,     setProducts]     = useState<ProductExtended[]>([]);
   const [isLoading,    setIsLoading]    = useState(true);
   const [error,        setError]        = useState<string | null>(null);
@@ -40,23 +41,23 @@ export default function InventoryPage() {
     setIsRefreshing(true);
     setError(null);
     try {
-      setProducts(await getExtendedCatalog(sellerId));
+      setProducts(await getExtendedCatalog(effectiveSellerId));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [sellerId]);
+  }, [effectiveSellerId]);
 
   useEffect(() => {
     load();
     const ch = supabase
-      .channel(`inventory-rt-${sellerId || 'global'}`)
+      .channel(`inventory-rt-${effectiveSellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => load(true))
       .subscribe();
     return () => { supabase.removeChannel(ch); Object.values(timers.current).forEach(clearTimeout); };
-  }, [load, sellerId]);
+  }, [load, effectiveSellerId]);
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -94,8 +95,8 @@ export default function InventoryPage() {
   const lowCount = products.filter(p => (p.stock ?? 0) <= (p.low_stock_threshold || 5)).length;
 
   const C = {
-    card:   isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
+    card:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:   isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
     text:   isDark ? 'text-white'  : 'text-gray-900',
     muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
     th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',

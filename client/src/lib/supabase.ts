@@ -134,15 +134,28 @@ export async function pingSupabase(): Promise<DatabaseHealth> {
 }
 
 /**
- * Retrieves the live product catalog ordered by created_at desc, scoped to active seller
+ * Retrieves the live product catalog ordered by created_at desc, strictly scoped to active seller
  */
 export async function getLiveCatalog(sellerId?: string | null): Promise<SupabaseProduct[]> {
   try {
-    let query = supabase.from("products").select("*");
-    if (sellerId) {
-      query = query.eq("seller_id", sellerId);
+    let resolvedId = sellerId;
+    if (resolvedId === undefined) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        resolvedId = user.id;
+      }
     }
-    const { data, error } = await query.order("created_at", { ascending: false });
+
+    // Strict multi-tenant isolation: if no authenticated user or seller ID is provided, return empty
+    if (!resolvedId) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("seller_id", resolvedId)
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.warn("Supabase products fetch warning:", error.message);
@@ -151,6 +164,28 @@ export async function getLiveCatalog(sellerId?: string | null): Promise<Supabase
     return (data as SupabaseProduct[]) || [];
   } catch (err) {
     console.error("Supabase fetch failed:", err);
+    return [];
+  }
+}
+
+/**
+ * Retrieves all active products across all sellers for the public buyer storefront
+ */
+export async function getPublicCatalog(): Promise<SupabaseProduct[]> {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("Public catalog fetch warning:", error.message);
+      return [];
+    }
+    return (data as SupabaseProduct[]) || [];
+  } catch (err) {
+    console.error("Public catalog fetch error:", err);
     return [];
   }
 }
@@ -264,7 +299,18 @@ export async function insertProductToCatalog(
   // Auto-generate SKU fallback if empty
   const skuVal = (product.sku || "").trim() || `FL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
-  const resolvedSellerId = sellerId || product.seller_id || '00000000-0000-0000-0000-000000000001';
+  let resolvedSellerId = sellerId || product.seller_id;
+  if (!resolvedSellerId) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        resolvedSellerId = user.id;
+      }
+    } catch {}
+  }
+  if (!resolvedSellerId) {
+    resolvedSellerId = '00000000-0000-0000-0000-000000000001';
+  }
 
   const payload = {
     name: product.name.trim(),
@@ -452,16 +498,23 @@ export type {
 export { DEMO_SELLER_ID } from './seller-types';
 
 /**
- * Fetch the seller profile row, scoped by sellerId or demo seller
+ * Fetch the seller profile row, scoped by sellerId or current authenticated user
  */
 export async function getSeller(sellerId?: string | null): Promise<Seller | null> {
   try {
-    const targetId = sellerId || '00000000-0000-0000-0000-000000000001';
+    let targetId = sellerId;
+    if (!targetId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) targetId = user.id;
+    }
+    if (!targetId) {
+      targetId = '00000000-0000-0000-0000-000000000001';
+    }
     const { data, error } = await supabase
       .from('sellers')
       .select('*')
-      .eq('id', targetId)
-      .single();
+      .or(`id.eq.${targetId},auth_user_id.eq.${targetId}`)
+      .maybeSingle();
     if (error) { console.warn('getSeller:', error.message); return null; }
     return data as Seller;
   } catch { return null; }
@@ -472,7 +525,14 @@ export async function getSeller(sellerId?: string | null): Promise<Seller | null
  */
 export async function updateSeller(patch: Partial<Seller>, sellerId?: string | null): Promise<Seller | null> {
   try {
-    const targetId = sellerId || '00000000-0000-0000-0000-000000000001';
+    let targetId = sellerId;
+    if (!targetId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) targetId = user.id;
+    }
+    if (!targetId) {
+      targetId = '00000000-0000-0000-0000-000000000001';
+    }
     const { data, error } = await supabase
       .from('sellers')
       .update(patch)
@@ -488,15 +548,29 @@ export async function updateSeller(patch: Partial<Seller>, sellerId?: string | n
 }
 
 /**
- * Fetch the full extended products list, scoped to seller
+ * Fetch the full extended products list, strictly scoped to seller
  */
 export async function getExtendedCatalog(sellerId?: string | null): Promise<ProductExtended[]> {
   try {
-    let query = supabase.from('products').select('*');
-    if (sellerId) {
-      query = query.eq('seller_id', sellerId);
+    let resolvedId = sellerId;
+    if (resolvedId === undefined) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        resolvedId = user.id;
+      }
     }
-    const { data, error } = await query.order('created_at', { ascending: false });
+
+    // Strict multi-tenant isolation: do not leak products if unauthenticated
+    if (!resolvedId) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('seller_id', resolvedId)
+      .order('created_at', { ascending: false });
+
     if (error) { console.warn('getExtendedCatalog:', error.message); return []; }
     return (data as ProductExtended[]) || [];
   } catch { return []; }

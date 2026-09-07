@@ -177,7 +177,7 @@ function Card({ children, className = '', hover = true }: { children: React.Reac
       className={`rounded-2xl border transition-all duration-200 ${
         isDark
           ? `border-neutral-800/80 bg-[#0D1117] ${hover ? 'hover:border-[#CCFF00]/30 hover:shadow-[0_4px_24px_rgba(0,0,0,0.6)]' : ''}`
-          : `border-gray-200 bg-white ${hover ? 'hover:border-[#CCFF00]/50 hover:shadow-lg' : ''}`
+          : `border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)] ${hover ? 'hover:border-[#CCFF00]/60 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.12)]' : ''}`
       } ${className}`}
     >
       {children}
@@ -359,7 +359,8 @@ function ChartTooltip({ active, payload, label }: any) {
 export default function SellerDashboard({ initialTab }: { initialTab?: TabId } = {}) {
   const [location, navigate] = useLocation();
   const { theme, isDark, toggleTheme } = useTheme();
-  const { sellerId } = useAuth();
+  const { sellerId, user } = useAuth();
+  const effectiveSellerId = sellerId || user?.id || null;
 
   // ── Tab routing ──
   const getTabFromPath = (path: string): TabId => {
@@ -441,7 +442,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     setIsRefreshing(true);
     try {
       const [prods, ords, kpis] = await Promise.all([
-        getLiveCatalog(sellerId), getLiveOrders(sellerId), getDashboardMetrics(sellerId)
+        getLiveCatalog(effectiveSellerId), getLiveOrders(effectiveSellerId), getDashboardMetrics(effectiveSellerId)
       ]);
       setProducts(prods || []);
       setOrders(ords   || []);
@@ -462,19 +463,19 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [sellerId]);
+  }, [effectiveSellerId]);
 
   useEffect(() => {
     loadData();
     const channel = supabase
-      .channel(`seller-rt-${sellerId || 'global'}`)
+      .channel(`seller-rt-${effectiveSellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadData(true))
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
       Object.values(stockTimers.current).forEach(clearTimeout);
     };
-  }, [loadData, sellerId]);
+  }, [loadData, effectiveSellerId]);
 
   // ── Tab switch ──
   const switchTab = (id: TabId) => {
@@ -565,11 +566,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           status: 'active',
           moq: Math.max(1, parseInt(formData.moq) || 1),
           low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
-          seller_id: sellerId || editingProduct.seller_id
+          seller_id: effectiveSellerId || editingProduct.seller_id
         };
         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
         setIsDrawerOpen(false);
-        await updateProductInCatalog(editingProduct.id, updated, sellerId);
+        await updateProductInCatalog(editingProduct.id, updated, effectiveSellerId);
         toast.success(`"${updated.name}" updated in live catalog`);
       } else {
         const payload = {
@@ -581,13 +582,13 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           status: 'active',
           moq: Math.max(1, parseInt(formData.moq) || 1),
           low_stock_threshold: Math.max(0, parseInt(formData.low_stock_threshold) || 5),
-          seller_id: sellerId || undefined
+          seller_id: effectiveSellerId || undefined
         };
         const tempId = `temp-${Date.now()}`;
         const optimistic: SupabaseProduct = { ...payload, id: tempId, created_at: new Date().toISOString() };
         setProducts(prev => [optimistic, ...prev]);
         setIsDrawerOpen(false);
-        const inserted = await insertProductToCatalog(payload, sellerId);
+        const inserted = await insertProductToCatalog(payload, effectiveSellerId);
         if (inserted?.id) setProducts(prev => prev.map(p => p.id === tempId ? inserted : p));
         toast.success(`"${formData.name.trim()}" published to catalog`);
       }
@@ -724,11 +725,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
   // ── Theme-aware class helpers ──
   const C = {
     base:       isDark ? 'bg-[#000000] text-[#F9FAFB]' : 'bg-[#F4F5F7] text-[#111827]',
-    header:     isDark ? 'border-neutral-800/80 bg-[#000000]/90' : 'border-neutral-200 bg-white/90 shadow-sm',
-    heroCard:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200 bg-white shadow-sm',
-    well:       isDark ? 'bg-[#12161F] border-neutral-800' : 'bg-neutral-50 border-neutral-200',
-    input:      isDark ? 'border-neutral-700 bg-[#141720] text-white placeholder:text-neutral-500 focus:border-[#CCFF00]' : 'border-neutral-300 bg-neutral-50 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00]',
-    select:     isDark ? 'border-neutral-700 bg-[#141720] text-white' : 'border-neutral-300 bg-neutral-50 text-neutral-900',
+    header:     isDark ? 'border-neutral-800/80 bg-[#000000]/90' : 'border-neutral-200/90 bg-white/95 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06)]',
+    heroCard:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.02)]',
+    well:       isDark ? 'bg-[#12161F] border-neutral-800' : 'bg-neutral-50/90 border-neutral-200',
+    input:      isDark ? 'border-neutral-700 bg-[#141720] text-white placeholder:text-neutral-500 focus:border-[#CCFF00]' : 'border-neutral-300 bg-white text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00]',
+    select:     isDark ? 'border-neutral-700 bg-[#141720] text-white' : 'border-neutral-300 bg-white text-neutral-900',
     label:      isDark ? 'text-neutral-400' : 'text-neutral-600',
     muted:      isDark ? 'text-neutral-400' : 'text-neutral-600',
     subtle:     isDark ? 'text-neutral-500' : 'text-neutral-400',
@@ -736,7 +737,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     tabActive:  'bg-[#CCFF00] text-black shadow-[0_0_15px_rgba(204,255,0,0.3)] font-extrabold',
     tabInactive: isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-neutral-900',
     tableRow:   isDark ? 'hover:bg-[#12161F]/60' : 'hover:bg-neutral-50',
-    pill:       isDark ? 'border-neutral-800 bg-neutral-800 text-neutral-300' : 'border-neutral-200 bg-neutral-200/80 text-neutral-800',
+    pill:       isDark ? 'border-neutral-800 bg-neutral-800 text-neutral-300' : 'border-neutral-200 bg-neutral-100 text-neutral-800',
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -747,8 +748,8 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       <div className="space-y-6">
 
         {/* ── HERO BANNER ── */}
-        <div className={`relative mb-7 overflow-hidden rounded-3xl border p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5 ${
-          isDark ? 'bg-[#0D1117] border-neutral-800' : 'bg-[#FFFFFF] border-neutral-200 shadow-sm'
+        <div className={`relative mb-7 overflow-hidden rounded-3xl border p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5 transition duration-200 ${
+          isDark ? 'bg-[#0D1117] border-neutral-800' : 'bg-[#FFFFFF] border-neutral-200/90 shadow-[0_6px_24px_-4px_rgba(0,0,0,0.07),0_2px_8px_-2px_rgba(0,0,0,0.03)]'
         }`}>
           {/* Glow orbs */}
           <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[#CCFF00]/8 blur-3xl" />
@@ -819,8 +820,10 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                 key={card.label}
                 whileHover={{ y: -3 }}
                 transition={SPRING_MODAL}
-                className={`relative overflow-hidden rounded-2xl border p-5 transition ${
-                  isDark ? 'bg-[#0E1117] border-neutral-800/80' : 'bg-[#FFFFFF] border-neutral-200 shadow-sm'
+                className={`relative overflow-hidden rounded-2xl border p-5 transition duration-200 ${
+                  isDark
+                    ? 'bg-[#0E1117] border-neutral-800/80'
+                    : 'bg-[#FFFFFF] border-neutral-200/90 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_28px_-4px_rgba(0,0,0,0.1)]'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -891,50 +894,59 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
               <Breadcrumb items={[{ label: 'Dashboard', href: '/seller/dashboard' }, { label: 'Live Catalog & Inventory' }]} />
 
               {/* Filter bar */}
-              <div className={`mb-5 flex flex-col gap-3 rounded-2xl border p-3 md:flex-row md:items-center ${C.heroCard}`}>
-                <div className={`flex flex-1 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 ${C.well}`}>
-                  <Search size={14} className={C.subtle} />
-                  <input
-                    type="text"
-                    placeholder="Search by title, brand, or category…"
-                    value={searchQuery}
-                    onChange={e => { setSearchQuery(e.target.value); setCatalogPage(1); }}
-                    className={`w-full bg-transparent text-xs outline-none ${isDark ? 'text-white placeholder:text-neutral-600' : 'text-gray-900 placeholder:text-gray-400'}`}
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className={C.subtle + ' hover:text-red-400'}>
-                      <X size={13} />
-                    </button>
-                  )}
+              <div className={`mb-5 flex flex-col gap-3 rounded-2xl border p-4 ${C.heroCard}`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
+                  <div className={`flex flex-1 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 ${C.well}`}>
+                    <Search size={14} className={C.subtle} />
+                    <input
+                      type="text"
+                      placeholder="Search by title, brand, SKU, or category…"
+                      value={searchQuery}
+                      onChange={e => { setSearchQuery(e.target.value); setCatalogPage(1); }}
+                      className={`w-full bg-transparent text-xs outline-none ${isDark ? 'text-white placeholder:text-neutral-600' : 'text-gray-900 placeholder:text-gray-400'}`}
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery('')} className={C.subtle + ' hover:text-red-400'}>
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-1 shrink-0">
+                    {(['grid','table'] as const).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setViewMode(m)}
+                        className={`rounded-xl border p-2.5 transition ${
+                          viewMode === m
+                            ? 'bg-[#CCFF00] text-black border-[#CCFF00]'
+                            : `${C.well} ${C.muted} hover:border-[#CCFF00]/40 hover:text-black dark:hover:text-white`
+                        }`}
+                        title={m === 'grid' ? 'Grid View' : 'Table View'}
+                      >
+                        {m === 'grid' ? <Layers size={14} /> : <ClipboardList size={14} />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="w-full min-w-0 flex items-center gap-2 overflow-x-auto py-2 px-1 scrollbar-none no-scrollbar touch-pan-x select-none">
-                  {['All', ...VALID_CATEGORIES].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => { setSelectedCategory(cat); setCatalogPage(1); }}
-                      className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
-                        selectedCategory === cat
-                          ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)] font-extrabold'
-                          : 'bg-neutral-200/80 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-
-                <div className={`hidden sm:flex items-center gap-1 border-l pl-3 ${C.divider}`}>
-                  {(['grid','table'] as const).map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setViewMode(m)}
-                      className={`rounded-lg p-2 transition ${viewMode === m ? 'bg-[#CCFF00] text-black' : C.muted + ' hover:text-white'}`}
-                      title={m === 'grid' ? 'Grid View' : 'Table View'}
-                    >
-                      {m === 'grid' ? <Layers size={14} /> : <ClipboardList size={14} />}
-                    </button>
-                  ))}
+                {/* Horizontal Category Rail */}
+                <div className="w-full relative flex items-center pt-1 border-t border-neutral-200/80 dark:border-neutral-800/80">
+                  <div className="w-full flex items-center gap-2 overflow-x-auto py-2.5 px-2 scroll-smooth no-scrollbar touch-pan-x select-none">
+                    {['All', ...VALID_CATEGORIES].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => { setSelectedCategory(cat); setCatalogPage(1); }}
+                        className={`shrink-0 whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-150 active:scale-95 cursor-pointer ${
+                          selectedCategory === cat
+                            ? 'bg-[#CCFF00] text-black shadow-[0_0_14px_rgba(204,255,0,0.35)] font-extrabold'
+                            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700/60'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

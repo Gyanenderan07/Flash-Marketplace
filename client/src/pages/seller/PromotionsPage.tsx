@@ -8,6 +8,7 @@ import {
   type Promotion, type ProductExtended, type ProductPriceTier
 } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
@@ -26,6 +27,8 @@ type PromoSubTab = 'coupons' | 'volume_tiers';
 
 export default function PromotionsPage() {
   const { isDark } = useTheme();
+  const { sellerId, user } = useAuth();
+  const effectiveSellerId = sellerId || user?.id || null;
   const [subTab,       setSubTab]       = useState<PromoSubTab>('coupons');
   const [promos,       setPromos]       = useState<Promotion[]>([]);
   const [products,     setProducts]     = useState<ProductExtended[]>([]);
@@ -45,8 +48,8 @@ export default function PromotionsPage() {
   // Volume rule builder fields
   const [selectedProductId, setSelectedProductId] = useState<string>('all');
   const [ruleTiers, setRuleTiers] = useState<Array<{ min_qty: number; unit_price: number }>>([
-    { min_qty: 10, unit_price: 1350 },
-    { min_qty: 50, unit_price: 1200 },
+    { min_qty: 10, unit_price: 1399 },
+    { min_qty: 50, unit_price: 1199 },
     { min_qty: 100, unit_price: 999 },
   ]);
   const [isSavingTiers, setIsSavingTiers] = useState(false);
@@ -56,7 +59,7 @@ export default function PromotionsPage() {
     try {
       const [promoData, catalogData] = await Promise.all([
         getPromotions(),
-        getExtendedCatalog(),
+        getExtendedCatalog(effectiveSellerId),
       ]);
       setPromos(promoData);
       setProducts(catalogData);
@@ -65,7 +68,7 @@ export default function PromotionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [effectiveSellerId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -147,8 +150,8 @@ export default function PromotionsPage() {
   };
 
   const C = {
-    card:    isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:    isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
+    card:    isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:    isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
     text:    isDark ? 'text-white'  : 'text-gray-900',
     muted:   isDark ? 'text-neutral-500' : 'text-gray-400',
     input:   isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',

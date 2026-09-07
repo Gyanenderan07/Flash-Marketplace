@@ -23,6 +23,7 @@ import {
 import { Link } from 'wouter';
 import { supabase, getExtendedOrders, getExtendedCatalog, type OrderExtended, type ProductExtended } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { SkeletonCard } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
 import { StatusBadge } from '@/components/seller/StatusBadge';
@@ -82,6 +83,8 @@ function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; p
 
 export default function AnalyticsPage() {
   const { isDark } = useTheme();
+  const { sellerId, user } = useAuth();
+  const effectiveSellerId = sellerId || user?.id || null;
   const [orders,    setOrders]    = useState<OrderExtended[]>([]);
   const [products,  setProducts]  = useState<ProductExtended[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,12 +92,15 @@ export default function AnalyticsPage() {
   const [chartMode, setChartMode] = useState<ChartMode>('revenue');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // ── Load live data from shared Supabase instance ──
+  // ── Load live data from shared Supabase instance scoped to seller ──
   const load = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
     setIsRefreshing(true);
     try {
-      const [o, p] = await Promise.all([getExtendedOrders(), getExtendedCatalog()]);
+      const [o, p] = await Promise.all([
+        getExtendedOrders(effectiveSellerId),
+        getExtendedCatalog(effectiveSellerId)
+      ]);
       setOrders(o || []);
       setProducts(p || []);
     } catch (e: unknown) {
@@ -103,20 +109,20 @@ export default function AnalyticsPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [effectiveSellerId]);
 
   // ── Real-Time Supabase Pipelines ──
   useEffect(() => {
     load();
     const orderChannel = supabase
-      .channel('analytics-orders-rt')
+      .channel(`analytics-orders-rt-${effectiveSellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         load(true);
       })
       .subscribe();
 
     const productChannel = supabase
-      .channel('analytics-products-rt')
+      .channel(`analytics-products-rt-${effectiveSellerId || 'global'}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         load(true);
       })
@@ -126,7 +132,7 @@ export default function AnalyticsPage() {
       supabase.removeChannel(orderChannel);
       supabase.removeChannel(productChannel);
     };
-  }, [load]);
+  }, [load, effectiveSellerId]);
 
   // ── Date Range Filtering ──
   const filteredOrders = useMemo(() => {
@@ -245,8 +251,8 @@ export default function AnalyticsPage() {
 
   // ── Design Tokens ──
   const C = {
-    card:    isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-neutral-200 bg-white shadow-sm',
-    well:    isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-neutral-200 bg-neutral-50',
+    card:    isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:    isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
     text:    isDark ? 'text-white' : 'text-neutral-900',
     muted:   isDark ? 'text-neutral-400' : 'text-neutral-500',
     divider: isDark ? 'border-[#1F2430]' : 'border-neutral-200',
