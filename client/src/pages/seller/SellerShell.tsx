@@ -70,6 +70,53 @@ export interface BreadcrumbItem {
   href?: string;
 }
 
+export const BREADCRUMB_ROUTE_MAP: Record<string, string> = {
+  'seller central': '/seller/dashboard',
+  'dashboard': '/seller/dashboard',
+  'operational overview': '/seller/dashboard',
+  'overview': '/seller/dashboard',
+  'listings': '/seller/listings',
+  'live catalog': '/seller/listings',
+  'live catalog & inventory': '/seller/listings',
+  'catalog & stock': '/seller/listings',
+  'catalog': '/seller/listings',
+  'product catalog': '/seller/listings',
+  'inventory': '/seller/inventory',
+  'stock manager': '/seller/inventory',
+  'stock': '/seller/inventory',
+  'orders': '/seller/orders',
+  'fulfillment queue': '/seller/orders',
+  'fulfillment console': '/seller/orders',
+  'fulfillment': '/seller/orders',
+  'rfq / quotes': '/seller/rfq',
+  'rfq': '/seller/rfq',
+  'quotes': '/seller/rfq',
+  'buyer rfqs': '/seller/rfq',
+  'bulk rfq negotiation inbox': '/seller/rfq',
+  'promotions': '/seller/promotions',
+  'returns': '/seller/returns',
+  'refunds': '/seller/returns',
+  'returns & refunds': '/seller/returns',
+  'payouts': '/seller/payouts',
+  'payout ledger': '/seller/payouts',
+  'payments & payouts': '/seller/payouts',
+  'analytics': '/seller/analytics',
+  'analytics hub': '/seller/analytics',
+  'real-time buyer analytics': '/seller/analytics',
+  'real-time buyer hub analytics': '/seller/analytics',
+  'health': '/seller/health',
+  'account health': '/seller/health',
+  'seller health': '/seller/health',
+  'settings': '/seller/settings',
+  'store settings': '/seller/settings',
+};
+
+export function resolveBreadcrumbRoute(label: string): string | undefined {
+  if (!label) return undefined;
+  const normalized = label.toLowerCase().trim();
+  return BREADCRUMB_ROUTE_MAP[normalized];
+}
+
 // ─── Sidebar Nav Item ────────────────────────────────────────────────────────
 function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const [location] = useLocation();
@@ -193,24 +240,32 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
   // Dynamic automatic breadcrumbs
   const computedBreadcrumbs = useMemo((): BreadcrumbItem[] => {
-    if (breadcrumbs && breadcrumbs.length > 0) return breadcrumbs;
+    if (breadcrumbs && breadcrumbs.length > 0) {
+      return breadcrumbs.map(b => ({
+        ...b,
+        href: b.href || resolveBreadcrumbRoute(b.label),
+      }));
+    }
     const clean = location.split('?')[0];
     const item = SELLER_NAV_ITEMS.find(n => n.href === clean);
     if (clean === '/seller/dashboard' || clean === '/seller') {
-      return [{ label: 'Seller Central', href: '/seller/dashboard' }, { label: 'Operational Overview' }];
+      return [
+        { label: 'Seller Central', href: '/seller/dashboard' },
+        { label: 'Operational Overview', href: '/seller/dashboard' }
+      ];
     }
     return [
       { label: 'Seller Central', href: '/seller/dashboard' },
-      { label: item?.label || title || 'Console', href: item?.href }
+      { label: item?.label || title || 'Console', href: item?.href || resolveBreadcrumbRoute(title || '') }
     ];
   }, [breadcrumbs, location, title]);
 
   const sidebarBg = isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white';
   const mainBg    = isDark ? 'bg-[#000000]' : 'bg-[#F8F9FA]';
-  const topbarBg  = isDark ? 'border-[#1F2430] bg-[#000000]/90' : 'border-gray-200 bg-white/90';
+  const topbarBg  = isDark ? 'border-[#1F2430] bg-[#0D1117]/90' : 'border-gray-200 bg-white/90';
 
   return (
-    <div className={`flex min-h-screen antialiased ${mainBg}`}>
+    <div className={`flex min-h-screen w-full max-w-[100vw] overflow-x-hidden antialiased ${mainBg} ${isDark ? 'text-white' : 'text-gray-900'}`}>
 
       {/* ─── MOBILE OVERLAY ─── */}
       <AnimatePresence>
@@ -219,7 +274,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
             onClick={() => setMobileOpen(false)}
           />
         )}
@@ -227,29 +282,29 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
       {/* ─── SIDEBAR (Desktop) ─── */}
       <motion.aside
-        animate={{ width: collapsed ? 68 : 230 }}
+        animate={{ width: collapsed ? 68 : 256 }}
         transition={SPRING_PANEL}
-        className={`fixed left-0 top-0 z-50 hidden h-full flex-col border-r overflow-hidden lg:flex ${sidebarBg}`}
+        className={`sticky top-0 h-screen w-64 shrink-0 hidden md:flex flex-col border-r overflow-hidden ${sidebarBg}`}
       >
         {/* Logo Branding */}
         <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[#1F2430] px-3.5">
           {!collapsed && (
             <Link href="/seller/dashboard" className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)]">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)] shrink-0">
                 <Zap size={17} fill="currentColor" />
               </span>
               <div className="flex flex-col">
                 <span className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  flash<span className="text-[#CCFF00]">.biz</span>
+                  FLASH BUSINESS
                 </span>
-                <span className="text-[8px] font-mono tracking-widest text-neutral-500 uppercase">
-                  Seller Central
+                <span className="text-[10px] tracking-widest text-neutral-400 font-bold uppercase">
+                  SELLER CENTRAL
                 </span>
               </div>
             </Link>
           )}
           {collapsed && (
-            <Link href="/seller/dashboard" className="mx-auto">
+            <Link href="/seller/dashboard" className="mx-auto" title="Flash Business - Seller Central">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)]">
                 <Zap size={17} fill="currentColor" />
               </span>
@@ -318,16 +373,21 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
             animate={{ x: 0 }}
             exit={{ x: -270 }}
             transition={SPRING_PANEL}
-            className={`fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r lg:hidden ${sidebarBg}`}
+            className={`fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r md:hidden ${sidebarBg}`}
           >
             <div className="flex h-14 items-center justify-between border-b border-[#1F2430] px-4">
               <div className="flex items-center gap-2">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#CCFF00] text-black">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#CCFF00] text-black shrink-0">
                   <Zap size={15} fill="currentColor" />
                 </span>
-                <span className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  flash<span className="text-[#CCFF00]">.biz</span>
-                </span>
+                <div className="flex flex-col">
+                  <span className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    FLASH BUSINESS
+                  </span>
+                  <span className="text-[10px] tracking-widest text-neutral-400 font-bold uppercase">
+                    SELLER CENTRAL
+                  </span>
+                </div>
               </div>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 text-neutral-500 hover:text-white">
                 <X size={16} />
@@ -356,43 +416,43 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
       </AnimatePresence>
 
       {/* ─── MAIN CONTENT AREA ─── */}
-      <div
-        className="flex flex-1 flex-col transition-all duration-200"
-        style={{ marginLeft: collapsed ? 68 : 230 }}
-      >
+      <div className="flex-1 min-w-0 w-full flex flex-col min-h-screen overflow-x-hidden">
         {/* ─── PERSISTENT GLOBAL TOP BAR ─── */}
-        <header className={`sticky top-0 z-30 flex h-14 items-center justify-between border-b px-4 backdrop-blur-md sm:px-6 ${topbarBg}`}>
-          <div className="flex items-center gap-3">
+        <header className={`sticky top-0 z-30 w-full flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap border-b px-4 backdrop-blur-md sm:px-6 shrink-0 ${topbarBg}`}>
+          <div className="flex items-center gap-3 min-w-0 flex-1 sm:flex-initial">
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(true)}
-              className={`rounded-lg border p-2 transition lg:hidden ${isDark ? 'border-[#1F2430] bg-[#12161F] text-neutral-400' : 'border-gray-200 text-gray-500'}`}
+              className={`rounded-lg border p-2 transition md:hidden shrink-0 ${isDark ? 'border-[#1F2430] bg-[#12161F] text-neutral-400' : 'border-gray-200 text-gray-500'}`}
               title="Open Navigation"
             >
               <Layers size={15} />
             </button>
 
-            {/* Dynamic, accessible Breadcrumbs */}
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs">
+            {/* Dynamic, interactive Breadcrumbs */}
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs sm:text-sm min-w-0 overflow-hidden">
               {computedBreadcrumbs.map((bc, i) => {
                 const isLast = i === computedBreadcrumbs.length - 1;
+                const resolvedHref = bc.href || resolveBreadcrumbRoute(bc.label);
+                const isClickable = !isLast && !!resolvedHref;
+
                 return (
                   <React.Fragment key={i}>
                     {i > 0 && (
-                      <ChevronRight size={12} className="text-neutral-500 flex-shrink-0" />
+                      <span className="text-neutral-600 select-none px-1 text-xs sm:text-sm shrink-0">
+                        ›
+                      </span>
                     )}
-                    {bc.href && !isLast ? (
+                    {isClickable ? (
                       <Link
-                        href={bc.href}
-                        className={`font-semibold transition hover:text-[#CCFF00] ${
-                          isDark ? 'text-neutral-400' : 'text-gray-500'
-                        }`}
+                        href={resolvedHref!}
+                        className="hover:text-[#CCFF00] transition-colors cursor-pointer text-neutral-400 font-medium text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[200px]"
                       >
                         {bc.label}
                       </Link>
                     ) : (
                       <span
-                        className={`font-extrabold truncate max-w-[200px] sm:max-w-[320px] ${
+                        className={`font-bold text-xs sm:text-sm select-text truncate max-w-[160px] sm:max-w-[260px] ${
                           isDark ? 'text-white' : 'text-gray-900'
                         }`}
                       >
@@ -406,23 +466,23 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 ml-auto sm:ml-0">
             {/* View Buyer Storefront External CTA button */}
             <a
               href={BUYER_STOREFRONT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#CCFF00]/40 bg-[#CCFF00]/10 px-3 sm:px-3.5 py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#CCFF00] transition hover:bg-[#CCFF00] hover:text-black hover:shadow-[0_0_16px_rgba(204,255,0,0.3)] active:scale-95"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#CCFF00]/40 bg-[#CCFF00]/10 px-3 sm:px-3.5 py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#CCFF00] transition hover:bg-[#CCFF00] hover:text-black hover:shadow-[0_0_16px_rgba(204,255,0,0.3)] active:scale-95"
             >
               <span>View Buyer Storefront</span>
-              <ExternalLink size={11} />
+              <ExternalLink size={11} className="shrink-0" />
             </a>
 
             {/* Theme toggle */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
-              className={`rounded-full border p-2 transition ${isDark ? 'border-[#1F2430] bg-[#12161F] text-neutral-400 hover:text-[#CCFF00]' : 'border-gray-200 bg-white text-gray-500 hover:text-[#CCFF00]'}`}
+              className={`shrink-0 rounded-full border p-2 transition ${isDark ? 'border-[#1F2430] bg-[#12161F] text-neutral-400 hover:text-[#CCFF00]' : 'border-gray-200 bg-white text-gray-500 hover:text-[#CCFF00]'}`}
               title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -440,10 +500,10 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
             </motion.button>
 
             {/* Notification bell */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => setBellOpen(b => !b)}
-                className={`relative rounded-full border p-2 transition ${isDark ? 'border-[#1F2430] bg-[#12161F] text-neutral-400 hover:text-white' : 'border-gray-200 bg-white text-gray-500'}`}
+                className={`relative shrink-0 rounded-full border p-2 transition ${isDark ? 'border-[#1F2430] bg-[#12161F] text-neutral-400 hover:text-white' : 'border-gray-200 bg-white text-gray-500'}`}
                 title="Notifications"
               >
                 <Bell size={15} />
@@ -524,8 +584,10 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
         </header>
 
         {/* ─── PAGE CONTENT CONTAINER ─── */}
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto">
-          {children}
+        <main className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto w-full min-w-0">
+            {children}
+          </div>
         </main>
       </div>
     </div>

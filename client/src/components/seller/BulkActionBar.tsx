@@ -28,9 +28,9 @@ export function BulkActionBar({ selectedCount, actions, onClear }: BulkActionBar
           animate={{ y: 0,  opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 max-w-[calc(100vw-2rem)] w-auto"
         >
-          <div className="flex items-center gap-3 rounded-2xl border border-[#1F2430] bg-black px-4 py-3 shadow-[0_8px_40px_rgba(0,0,0,0.8)] backdrop-blur-md">
+          <div className="flex items-center gap-3 rounded-2xl border border-[#1F2430] bg-black px-4 py-3 shadow-[0_8px_40px_rgba(0,0,0,0.8)] backdrop-blur-md overflow-x-auto max-w-full scrollbar-none">
             {/* Count chip */}
             <div className="flex items-center gap-2 rounded-full border border-[#CCFF00]/30 bg-[#CCFF00]/10 px-3 py-1">
               <span className="text-xs font-black tabular-nums text-[#CCFF00]">{selectedCount}</span>

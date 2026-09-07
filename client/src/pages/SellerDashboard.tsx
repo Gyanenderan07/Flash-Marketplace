@@ -65,7 +65,7 @@ import {
 } from '@/lib/supabase';
 import { SafeImage } from '@/components/SafeImage';
 import { useTheme } from '@/contexts/ThemeContext';
-import SellerShell from './seller/SellerShell';
+import SellerShell, { resolveBreadcrumbRoute } from './seller/SellerShell';
 
 // ─── Animation presets ───────────────────────────────────────────────────────
 const SPRING_TABS   = { type: 'spring', stiffness: 380, damping: 30 } as const;
@@ -246,19 +246,30 @@ function StatusChip({ label, variant = 'default' }: { label: string; variant?: '
 function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   const { isDark } = useTheme();
   return (
-    <nav className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest mb-5">
-      {items.map((item, i) => (
-        <React.Fragment key={i}>
-          {i > 0 && <span className={isDark ? 'text-neutral-700' : 'text-gray-300'}>/</span>}
-          {item.href && i < items.length - 1 ? (
-            <Link href={item.href} className={`transition ${isDark ? 'text-neutral-500 hover:text-neutral-300' : 'text-gray-400 hover:text-gray-700'}`}>
-              {item.label}
-            </Link>
-          ) : (
-            <span className={isDark ? 'text-neutral-300' : 'text-gray-600'}>{item.label}</span>
-          )}
-        </React.Fragment>
-      ))}
+    <nav aria-label="Section Breadcrumb" className="flex items-center gap-1 text-xs sm:text-sm mb-5">
+      {items.map((item, i) => {
+        const isLast = i === items.length - 1;
+        const resolvedHref = item.href || resolveBreadcrumbRoute(item.label);
+        const isClickable = !isLast && !!resolvedHref;
+
+        return (
+          <React.Fragment key={i}>
+            {i > 0 && <span className="text-neutral-600 select-none px-1">›</span>}
+            {isClickable ? (
+              <Link
+                href={resolvedHref!}
+                className="hover:text-[#CCFF00] transition-colors cursor-pointer text-neutral-400 font-medium text-xs sm:text-sm"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span className={`font-bold text-xs sm:text-sm select-text ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {item.label}
+              </span>
+            )}
+          </React.Fragment>
+        );
+      })}
     </nav>
   );
 }

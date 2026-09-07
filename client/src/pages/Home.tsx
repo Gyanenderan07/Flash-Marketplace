@@ -46,10 +46,10 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
           </span>
           <div className="flex flex-col">
             <span className="text-lg font-black uppercase tracking-tight text-white">
-              flash<span className="text-[#CCFF00]">.biz</span>
+              FLASH BUSINESS
             </span>
-            <span className="text-[9px] font-mono tracking-widest text-neutral-500 uppercase">
-              Enterprise Seller Central
+            <span className="text-[10px] tracking-widest text-neutral-400 font-bold uppercase">
+              SELLER CENTRAL
             </span>
           </div>
         </div>
