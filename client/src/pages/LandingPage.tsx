@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { BUYER_STOREFRONT_URL } from '@/lib/supabase';
-import { ThreeCanvas } from '@/components/landing/ThreeCanvas';
+import { ThreeBackground } from '@/components/ThreeBackground';
 
 export default function LandingPage() {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -45,7 +45,7 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-[#F4F5F7] dark:bg-[#000000] text-neutral-900 dark:text-white selection:bg-[#CCFF00] selection:text-black antialiased transition-colors duration-200">
       {/* ── 3D THREE.JS AMBIENT CANVAS ── */}
-      <ThreeCanvas className="opacity-90 dark:opacity-100" />
+      <ThreeBackground className="opacity-90 dark:opacity-100" />
 
       {/* ── TOP NAVIGATION ── */}
       <header className="sticky top-0 z-50 w-full border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-black/80 backdrop-blur-md transition-colors duration-200">
@@ -196,28 +196,30 @@ export default function LandingPage() {
           </a>
         </motion.div>
 
-        {/* Feature Badges */}
+        {/* Feature Badges - Core Value Propositions */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs font-bold text-neutral-500 dark:text-neutral-400"
+          className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs font-bold text-neutral-600 dark:text-neutral-300"
         >
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200/60 dark:border-neutral-800/80 bg-white/70 dark:bg-[#0D1117]/80 px-3.5 py-1.5 backdrop-blur-sm shadow-sm">
             <CheckCircle2 size={15} className="text-[#15803D] dark:text-[#CCFF00]" />
-            <span>Multi-Tenant Catalog Scoping</span>
+            <span>Real-Time Catalog Sync</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200/60 dark:border-neutral-800/80 bg-white/70 dark:bg-[#0D1117]/80 px-3.5 py-1.5 backdrop-blur-sm shadow-sm">
             <CheckCircle2 size={15} className="text-[#15803D] dark:text-[#CCFF00]" />
-            <span>Live Stock Depletion Radar</span>
+            <span>Instant Bulk Pricing Tiers</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200/60 dark:border-neutral-800/80 bg-white/70 dark:bg-[#0D1117]/80 px-3.5 py-1.5 backdrop-blur-sm shadow-sm">
             <CheckCircle2 size={15} className="text-[#15803D] dark:text-[#CCFF00]" />
-            <span>24h Dispatch SLA Compliance</span>
+            <span>
+              Direct Storefront Distribution to <span className="font-mono text-[11px] text-[#15803D] dark:text-[#CCFF00]">flash-beryl.vercel.app</span>
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200/60 dark:border-neutral-800/80 bg-white/70 dark:bg-[#0D1117]/80 px-3.5 py-1.5 backdrop-blur-sm shadow-sm">
             <CheckCircle2 size={15} className="text-[#15803D] dark:text-[#CCFF00]" />
-            <span>Automated Delhivery / BlueDart AWBs</span>
+            <span>Automated Delhivery & BlueDart AWBs</span>
           </div>
         </motion.div>
       </section>
