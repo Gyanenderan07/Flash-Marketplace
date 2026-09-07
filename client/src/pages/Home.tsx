@@ -45,8 +45,9 @@ function SellerAuth({ signup = false }: { signup?: boolean }) {
             <Zap size={22} fill="currentColor" />
           </span>
           <div className="flex flex-col">
-            <span className="text-lg font-black uppercase tracking-tight text-white">
-              FLASH BUSINESS
+            <span className="text-lg font-black uppercase tracking-tight">
+              <span className="text-[#FFFFFF]">FLASH </span>
+              <span className="text-[#CCFF00]">BUSINESS</span>
             </span>
             <span className="text-[10px] tracking-widest text-neutral-400 font-bold uppercase">
               SELLER CENTRAL

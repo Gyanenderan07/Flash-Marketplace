@@ -519,12 +519,12 @@ export default function ListingsPage() {
       </div>
 
       {/* ── Category filtering rail without ugly scrollbar ── */}
-      <div className="mb-4 flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+      <div className="w-full flex items-center gap-2 overflow-x-auto py-2 px-1 scrollbar-none no-scrollbar touch-pan-x select-none mb-4">
         {['All', ...VALID_CATEGORIES].map(cat => (
           <button
             key={cat}
             onClick={() => { setCatFilter(cat); setPage(1); }}
-            className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
               catFilter === cat
                 ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
                 : `border ${C.well} ${C.muted} hover:text-white`

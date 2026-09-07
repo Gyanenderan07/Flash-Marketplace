@@ -319,11 +319,13 @@ button { cursor: pointer; }
 /* ============================================================
    SCROLLBAR UTILITIES
    ============================================================ */
-.scrollbar-none {
+.scrollbar-none,
+.no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* Thin custom scrollbar for modal/drawer content */
 .scrollbar-thin {

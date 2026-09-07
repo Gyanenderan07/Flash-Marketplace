@@ -853,12 +853,12 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                   )}
                 </div>
 
-                <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+                <div className="w-full min-w-0 flex items-center gap-2 overflow-x-auto py-2 px-1 scrollbar-none no-scrollbar touch-pan-x select-none">
                   {['All', ...VALID_CATEGORIES].map(cat => (
                     <button
                       key={cat}
                       onClick={() => { setSelectedCategory(cat); setCatalogPage(1); }}
-                      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                      className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
                         selectedCategory === cat ? C.tabActive : C.tabInactive
                       }`}
                     >
