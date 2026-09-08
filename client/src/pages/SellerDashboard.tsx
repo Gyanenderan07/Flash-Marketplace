@@ -24,7 +24,6 @@ import {
   Layers,
   LayoutDashboard,
   Loader2,
-  LogOut,
   Minus,
   Moon,
   Package,
@@ -718,12 +717,6 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     }, 600);
   };
 
-  const handleLogout = () => {
-    try { localStorage.removeItem('flash-role'); } catch {}
-    toast.success('Signed out of Seller Central');
-    navigate('/auth/login');
-  };
-
   // ── Theme-aware class helpers ──
   const C = {
     base:       isDark ? 'bg-[#000000] text-[#F9FAFB]' : 'bg-[#F4F5F7] text-[#111827]',
@@ -772,13 +765,10 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           </div>
 
           {/* Right */}
-          <div className="relative z-10 flex flex-wrap items-center gap-3">
+          <div className="relative z-10 flex items-center">
             <AccentButton onClick={openAddDrawer} size="lg">
               <Plus size={15} /> Add Product
             </AccentButton>
-            <GhostButton onClick={handleLogout}>
-              <LogOut size={13} /> Sign Out
-            </GhostButton>
           </div>
         </div>
 
