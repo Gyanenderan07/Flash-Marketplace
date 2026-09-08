@@ -772,33 +772,33 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
         <div className="mb-7 grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           {[
             {
+              id: 'listings',
               label: 'Active Listings',
               value: metrics.skuCount.toString(),
               sub: 'Across all categories',
-              subVariant: 'default' as const,
               icon: PackageCheck,
             },
             {
+              id: 'revenue',
               label: 'Gross Revenue',
               value: formatINR(metrics.grossRevenue),
               sub: 'All-time order volume',
-              subVariant: 'success' as const,
               icon: TrendingUp,
               isMono: true,
             },
             {
+              id: 'pending',
               label: 'Pending Shipments',
               value: metrics.pendingOrders.toString().padStart(2, '0'),
               sub: 'Awaiting dispatch',
-              subVariant: 'warning' as const,
               icon: Truck,
             },
             {
+              id: 'health',
               label: 'Merchant Health',
               value: `${metrics.healthIndex}`,
               valueSuffix: '/100',
               sub: 'Good standing · 99.4% SLA',
-              subVariant: 'success' as const,
               icon: Shield,
             },
           ].map((card) => {
@@ -815,17 +815,35 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                 }`}
               >
                 <div className="flex items-start justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">{card.label}</span>
-                  <Icon size={15} className="text-[#CCFF00]" />
+                  <span className="text-neutral-700 dark:text-neutral-400 font-bold tracking-wider text-xs uppercase">{card.label}</span>
+                  <Icon size={16} className="text-emerald-600 dark:text-[#CCFF00]" />
                 </div>
-                <div className="mt-3 font-mono text-2xl font-semibold tabular-nums text-neutral-900 dark:text-white">
+                <div className="mt-3 font-mono font-black text-2xl tabular-nums text-neutral-950 dark:text-white">
                   {card.value}
-                  {card.valueSuffix && <span className={`text-sm font-normal ${C.subtle}`}>{card.valueSuffix}</span>}
+                  {card.valueSuffix && <span className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">{card.valueSuffix}</span>}
                 </div>
-                <div className={`mt-1.5 text-[10px] font-semibold ${
-                  card.subVariant === 'success' ? 'text-[#52E82E]' :
-                  card.subVariant === 'warning' ? 'text-amber-500 dark:text-amber-400' : 'text-neutral-500 dark:text-neutral-400'
-                }`}>{card.sub}</div>
+                <div className="mt-2 flex items-center">
+                  {card.id === 'revenue' && (
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs">
+                      {card.sub}
+                    </span>
+                  )}
+                  {card.id === 'pending' && (
+                    <span className="text-xs text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-800/40">
+                      {card.sub}
+                    </span>
+                  )}
+                  {card.id === 'health' && (
+                    <span className="text-xs text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/40">
+                      {card.sub}
+                    </span>
+                  )}
+                  {card.id === 'listings' && (
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium text-xs">
+                      {card.sub}
+                    </span>
+                  )}
+                </div>
               </motion.div>
             );
           })}
@@ -1005,17 +1023,26 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
 
                               {/* Stock stepper */}
                               <div className="flex flex-col items-end gap-0.5">
-                                <span className={`text-[9px] font-black uppercase tracking-wider ${C.subtle}`}>Stock</span>
-                                <div className={`flex items-center rounded-full border p-0.5 ${C.pill}`}>
-                                  <button onClick={() => handleStockStep(product, -1)} disabled={(product.stock ?? 0) <= 0}
-                                    className={`grid h-5 w-5 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-800 hover:text-white disabled:opacity-40`}>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-400">
+                                  Stock
+                                </span>
+                                <div className="flex items-center rounded-full border p-0.5 bg-neutral-100 border-neutral-300 dark:bg-neutral-900/90 dark:border-neutral-800">
+                                  <button
+                                    onClick={() => handleStockStep(product, -1)}
+                                    disabled={(product.stock ?? 0) <= 0}
+                                    className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800 disabled:opacity-40"
+                                    title="Decrease stock"
+                                  >
                                     <Minus size={9} />
                                   </button>
-                                  <span className={`min-w-[2rem] text-center font-mono text-[11px] font-semibold tabular-nums ${isUpdating ? C.subtle : 'text-[#CCFF00]'}`}>
+                                  <span className={`min-w-[2rem] text-center font-mono font-black text-xs text-black dark:text-[#CCFF00] ${isUpdating ? 'opacity-50' : ''}`}>
                                     {isUpdating ? '…' : product.stock}
                                   </span>
-                                  <button onClick={() => handleStockStep(product, 1)}
-                                    className={`grid h-5 w-5 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-800 hover:text-white`}>
+                                  <button
+                                    onClick={() => handleStockStep(product, 1)}
+                                    className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800"
+                                    title="Increase stock"
+                                  >
                                     <Plus size={9} />
                                   </button>
                                 </div>
@@ -1043,7 +1070,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
               ) : (
                 /* TABLE VIEW */
                 <>
-                  <div className={`overflow-hidden rounded-2xl border ${C.heroCard}`}>
+                <div className={`overflow-hidden rounded-2xl border ${C.heroCard}`}>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead className="border-b text-[9px] font-black uppercase tracking-widest border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-[#14171F] text-neutral-700 dark:text-neutral-300">
@@ -1071,18 +1098,27 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                                 </td>
                                 <td className={`px-4 py-3 text-[10px] font-bold uppercase ${C.muted}`}>{p.category}</td>
                                 <td className={`px-4 py-3 font-mono font-semibold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>{formatINR(p.price)}</td>
-                                <td className="px-4 py-3 font-bold text-[#CCFF00]">{p.discount || '–'}</td>
+                                <td className="px-4 py-3 font-bold text-emerald-700 dark:text-[#CCFF00]">{p.discount || '–'}</td>
                                 <td className="px-4 py-3">
-                                  <div className={`inline-flex items-center rounded-full border p-0.5 ${C.pill}`}>
-                                    <button onClick={() => handleStockStep(p, -1)} disabled={(p.stock ?? 0) <= 0}
-                                      className={`grid h-5 w-5 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-800 hover:text-white disabled:opacity-40`}>
+                                  <div className="inline-flex items-center rounded-full border p-0.5 bg-neutral-100 border-neutral-300 dark:bg-neutral-900/90 dark:border-neutral-800">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStockStep(p, -1)}
+                                      disabled={(p.stock ?? 0) <= 0}
+                                      className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800 disabled:opacity-40"
+                                      title="Decrease stock"
+                                    >
                                       <Minus size={9} />
                                     </button>
-                                    <span className={`min-w-[2rem] text-center font-mono text-[11px] font-semibold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    <span className={`min-w-[2rem] text-center font-mono font-black text-xs text-black dark:text-[#CCFF00] ${isUpd ? 'opacity-50' : ''}`}>
                                       {isUpd ? '…' : p.stock}
                                     </span>
-                                    <button onClick={() => handleStockStep(p, 1)}
-                                      className={`grid h-5 w-5 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-800 hover:text-white`}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStockStep(p, 1)}
+                                      className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800"
+                                      title="Increase stock"
+                                    >
                                       <Plus size={9} />
                                     </button>
                                   </div>

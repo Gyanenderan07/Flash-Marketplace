@@ -643,27 +643,27 @@ export default function ListingsPage() {
                           <StatusBadge label={p.status || 'active'} variant={productStatusVariant(p.status || 'active')} />
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
+                          <div className="inline-flex items-center rounded-full border p-0.5 bg-neutral-100 border-neutral-300 dark:bg-neutral-900/90 dark:border-neutral-800">
                             <button
                               type="button"
                               onClick={() => adjustStock(p, -1)}
-                              disabled={stockUpdating[p.id]}
-                              className={`h-6 w-6 rounded-md border grid place-items-center text-xs transition ${C.well} ${C.muted} hover:border-[#CCFF00] hover:text-[#CCFF00] disabled:opacity-50`}
+                              disabled={stockUpdating[p.id] || (p.stock ?? 0) <= 0}
+                              className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800 disabled:opacity-40"
                               title="Decrease stock"
                             >
-                              <Minus size={10} />
+                              <Minus size={9} />
                             </button>
-                            <span className={`w-8 text-center font-mono tabular-nums font-bold ${C.text}`}>
+                            <span className="min-w-[2rem] text-center font-mono font-black text-xs text-black dark:text-[#CCFF00]">
                               {p.stock ?? 0}
                             </span>
                             <button
                               type="button"
                               onClick={() => adjustStock(p, 1)}
                               disabled={stockUpdating[p.id]}
-                              className={`h-6 w-6 rounded-md border grid place-items-center text-xs transition ${C.well} ${C.muted} hover:border-[#CCFF00] hover:text-[#CCFF00] disabled:opacity-50`}
+                              className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800"
                               title="Increase stock"
                             >
-                              <Plus size={10} />
+                              <Plus size={9} />
                             </button>
                           </div>
                           {lowStock && (
@@ -707,13 +707,27 @@ export default function ListingsPage() {
                     <div className="mt-2 flex flex-wrap gap-2 items-center">
                       <StatusBadge label={p.status || 'active'} variant={productStatusVariant(p.status || 'active')} />
                       <span className={`font-mono text-xs tabular-nums font-bold ${C.text}`}>{formatINR(p.price)}</span>
-                      <div className="flex items-center gap-1.5 rounded-lg border border-[#1F2430] bg-[#12161F] px-2 py-0.5">
-                        <button type="button" onClick={() => adjustStock(p, -1)} disabled={stockUpdating[p.id]} className="text-neutral-400 hover:text-[#CCFF00]">
-                          <Minus size={10} />
+                      <div className="inline-flex items-center rounded-full border p-0.5 bg-neutral-100 border-neutral-300 dark:bg-neutral-900/90 dark:border-neutral-800">
+                        <button
+                          type="button"
+                          onClick={() => adjustStock(p, -1)}
+                          disabled={stockUpdating[p.id] || (p.stock ?? 0) <= 0}
+                          className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800 disabled:opacity-40"
+                          title="Decrease stock"
+                        >
+                          <Minus size={9} />
                         </button>
-                        <span className={`font-mono text-xs font-bold ${C.text}`}>{p.stock ?? 0}</span>
-                        <button type="button" onClick={() => adjustStock(p, 1)} disabled={stockUpdating[p.id]} className="text-neutral-400 hover:text-[#CCFF00]">
-                          <Plus size={10} />
+                        <span className="min-w-[2rem] text-center font-mono font-black text-xs text-black dark:text-[#CCFF00]">
+                          {p.stock ?? 0}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => adjustStock(p, 1)}
+                          disabled={stockUpdating[p.id]}
+                          className="grid h-5 w-5 place-items-center rounded-full transition text-black font-extrabold hover:bg-neutral-200 dark:text-white dark:hover:bg-neutral-800"
+                          title="Increase stock"
+                        >
+                          <Plus size={9} />
                         </button>
                       </div>
                     </div>

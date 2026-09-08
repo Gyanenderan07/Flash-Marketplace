@@ -214,11 +214,11 @@ export default function InventoryPage() {
                               –10
                             </button>
                             <button onClick={() => adjustStock(p, 10)}
-                              className={`hidden rounded-full px-2 py-0.5 text-[9px] font-bold transition sm:block ${C.muted} hover:text-[#CCFF00]`}>
+                              className={`hidden rounded-full px-2 py-0.5 text-[9px] font-bold transition sm:block ${C.muted} hover:text-neutral-900 dark:hover:text-[#CCFF00]`}>
                               +10
                             </button>
                             <button onClick={() => adjustStock(p, 1)}
-                              className={`grid h-6 w-6 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-200 dark:hover:bg-[#1F2430] hover:text-[#CCFF00]`}>
+                              className={`grid h-6 w-6 place-items-center rounded-full transition ${C.muted} hover:bg-neutral-200 dark:hover:bg-[#1F2430] hover:text-neutral-900 dark:hover:text-[#CCFF00]`}>
                               <Plus size={10} />
                             </button>
                           </div>
@@ -267,7 +267,7 @@ export default function InventoryPage() {
                       <button onClick={() => adjustStock(p, -1)} disabled={(p.stock ?? 0) <= 0}
                         className={`grid h-7 w-7 place-items-center rounded-full transition ${C.muted} disabled:opacity-40`}><Minus size={12} /></button>
                       <button onClick={() => adjustStock(p, 1)}
-                        className={`grid h-7 w-7 place-items-center rounded-full transition text-[#CCFF00]`}><Plus size={12} /></button>
+                        className={`grid h-7 w-7 place-items-center rounded-full transition text-neutral-900 dark:text-[#CCFF00]`}><Plus size={12} /></button>
                     </div>
                   </div>
                 </div>
