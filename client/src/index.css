@@ -334,6 +334,54 @@ button { cursor: pointer; }
 .flash-lime-shadow { box-shadow: var(--shadow-accent); }
 
 /* ============================================================
+   CUSTOM GLOBAL SCROLLBAR (Flash Obsidian & Neon Theme)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F2430;
+  border-radius: 9999px;
+  border: 2px solid #000000;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CCFF00;
+  box-shadow: 0 0 10px rgba(204, 255, 0, 0.5);
+}
+
+/* Light Mode Adaptations */
+html:not(.dark) ::-webkit-scrollbar-track {
+  background: #F4F5F7;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border: 2px solid #F4F5F7;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #16A34A;
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1F2430 #000000;
+}
+
+html:not(.dark) * {
+  scrollbar-color: #D1D5DB #F4F5F7;
+}
+
+/* ============================================================
    SCROLLBAR UTILITIES
    ============================================================ */
 .scrollbar-none,
@@ -342,7 +390,9 @@ button { cursor: pointer; }
   scrollbar-width: none;
 }
 .scrollbar-none::-webkit-scrollbar,
-.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
 
 /* Thin custom scrollbar for modal/drawer content */
 .scrollbar-thin {
