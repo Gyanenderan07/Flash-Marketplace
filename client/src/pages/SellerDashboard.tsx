@@ -172,13 +172,10 @@ function orderStatusDistribution(orders: SupabaseOrder[]) {
 
 /** Themed surface card */
 function Card({ children, className = '', hover = true }: { children: React.ReactNode; className?: string; hover?: boolean }) {
-  const { isDark } = useTheme();
   return (
     <div
-      className={`rounded-2xl border transition-[background-color,border-color,box-shadow] duration-200 ${
-        isDark
-          ? `border-neutral-800/80 bg-[#0D1117] ${hover ? 'hover:border-[#CCFF00]/30 hover:shadow-[0_4px_24px_rgba(0,0,0,0.6)]' : ''}`
-          : `border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)] ${hover ? 'hover:border-[#CCFF00]/60 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.12)]' : ''}`
+      className={`rounded-2xl border border-neutral-200/90 dark:border-neutral-800/80 bg-white dark:bg-[#0D1117] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.6)] ${
+        hover ? 'hover:border-[#CCFF00]/60 dark:hover:border-[#CCFF00]/30 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_4px_24px_rgba(0,0,0,0.6)]' : ''
       } ${className}`}
     >
       {children}
@@ -225,7 +222,6 @@ function GhostButton({
   className?: string;
   danger?: boolean;
 }) {
-  const { isDark } = useTheme();
   return (
     <motion.button
       type={type}
@@ -234,14 +230,10 @@ function GhostButton({
       whileHover={disabled ? undefined : { y: -0.5 }}
       whileTap={disabled ? undefined : { scale: 0.97 }}
       transition={SPRING_MODAL}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider transition ${
-        isDark
-          ? danger
-            ? 'border-red-800 bg-[#12161F] text-red-400 hover:border-red-500 hover:text-red-300'
-            : 'border-neutral-800 bg-[#12161F] text-neutral-400 hover:border-neutral-600 hover:text-white'
-          : danger
-            ? 'border-red-200 bg-red-50 text-red-600 hover:border-red-300'
-            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-900'
+      className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider ${
+        danger
+          ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-[#12161F] text-red-600 dark:text-red-400 hover:border-red-300 dark:hover:border-red-500 hover:text-red-300'
+          : 'border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#12161F] text-gray-500 dark:text-neutral-400 hover:border-gray-300 dark:hover:border-neutral-600 hover:text-gray-900 dark:hover:text-white'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
     >
       {children}
@@ -267,7 +259,6 @@ function StatusChip({ label, variant = 'default' }: { label: string; variant?: '
 
 /** Breadcrumb */
 function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
-  const { isDark } = useTheme();
   return (
     <nav aria-label="Section Breadcrumb" className="flex items-center gap-1 text-xs sm:text-sm mb-5">
       {items.map((item, i) => {
@@ -286,7 +277,7 @@ function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
                 {item.label}
               </Link>
             ) : (
-              <span className={`font-bold text-xs sm:text-sm select-text ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <span className="font-bold text-xs sm:text-sm select-text text-gray-900 dark:text-white">
                 {item.label}
               </span>
             )}
@@ -301,19 +292,14 @@ function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
 function Pagination({
   page, totalPages, onPrev, onNext
 }: { page: number; totalPages: number; onPrev: () => void; onNext: () => void }) {
-  const { isDark } = useTheme();
   if (totalPages <= 1) return null;
-  const base = `rounded-full border px-3.5 py-1.5 text-xs font-black uppercase tracking-wider transition disabled:opacity-40 ${
-    isDark
-      ? 'border-neutral-800 bg-[#12161F] text-neutral-400 hover:border-neutral-700 hover:text-white'
-      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-800'
-  }`;
+  const base = `rounded-full border px-3.5 py-1.5 text-xs font-black uppercase tracking-wider disabled:opacity-40 border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#12161F] text-gray-500 dark:text-neutral-400 hover:border-gray-300 dark:hover:border-neutral-700 hover:text-gray-800 dark:hover:text-white`;
   return (
     <div className="flex items-center justify-center gap-3 pt-6">
       <button onClick={onPrev} disabled={page <= 1} className={base}>
         <ChevronLeft size={14} className="inline -mt-0.5" /> Prev
       </button>
-      <span className={`text-xs font-mono font-semibold tabular-nums ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
+      <span className="text-xs font-mono font-semibold tabular-nums text-gray-500 dark:text-neutral-400">
         {page} / {totalPages}
       </span>
       <button onClick={onNext} disabled={page >= totalPages} className={base}>

@@ -159,11 +159,6 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Scoped, GPU-friendly color transitions for theme changes (never layout properties) */
-body, aside {
-  will-change: background-color, color;
-}
-
 body {
   background: var(--bg-base);
   color: var(--text-primary);
@@ -172,13 +167,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body,
-aside,
-header,
-main {
-  transition-property: background-color, border-color, color;
-  transition-duration: 200ms;
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+/* Safe theme transition utility - ONLY applied where necessary, never globally to * */
+.theme-transition {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 
 button, a, input, select, textarea { font: inherit; }
