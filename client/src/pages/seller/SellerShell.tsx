@@ -567,26 +567,31 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
               <button
                 type="button"
                 onClick={() => setIsProfileModalOpen(true)}
-                className="shrink-0 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-700/80 hover:border-[#CCFF00]/50 transition-all duration-200 group cursor-pointer shadow-sm active:scale-95"
+                className="shrink-0 flex items-center gap-2.5 px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-sm active:scale-95 border bg-neutral-100 hover:bg-neutral-200/80 border-neutral-300/80 text-neutral-900 dark:bg-neutral-900/80 dark:hover:bg-neutral-800 dark:border-neutral-800 dark:text-white group"
                 title="Click to edit Store Profile & Business Details"
               >
-                {/* Dynamic Store Initial Circle */}
-                <span className="h-6 w-6 rounded-full bg-[#CCFF00] text-black font-black text-xs flex items-center justify-center select-none shadow-[0_0_8px_rgba(204,255,0,0.4)]">
-                  {(sellerProfile?.store_name || sellerProfile?.business_name || storeName || "M").charAt(0).toUpperCase()}
+                {/* Store Initial Circle */}
+                <span className="h-6 w-6 rounded-full font-black text-xs flex items-center justify-center select-none shadow-sm bg-emerald-500 text-white dark:bg-[#CCFF00] dark:text-black dark:shadow-[0_0_8px_rgba(204,255,0,0.35)]">
+                  {(sellerProfile?.store_name || sellerProfile?.business_name || storeName || "N").charAt(0).toUpperCase()}
                 </span>
 
                 {/* Store Display Name */}
-                <span className="text-xs font-bold text-white group-hover:text-[#CCFF00] transition-colors truncate max-w-[130px]">
-                  {sellerProfile?.store_name || sellerProfile?.business_name || storeName || "My Store"}
+                <span className="text-xs font-bold truncate max-w-[130px] text-neutral-900 dark:text-white transition-colors group-hover:text-emerald-600 dark:group-hover:text-[#CCFF00]">
+                  {sellerProfile?.store_name || sellerProfile?.business_name || storeName || "Nile Store"}
                 </span>
 
-                {/* Status Pill */}
-                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+                {/* Status Badge */}
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded border transition-colors bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60">
                   {sellerProfile?.kyc_status === 'verified' || isVerified ? 'VERIFIED' : 'PENDING'}
                 </span>
 
-                {/* Subtle Edit Pencil Indicator */}
-                <svg className="w-3 h-3 text-neutral-500 group-hover:text-[#CCFF00] transition-colors ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {/* Edit Pencil Icon */}
+                <svg 
+                  className="w-3 h-3 transition-colors text-neutral-500 dark:text-neutral-400 group-hover:text-emerald-600 dark:group-hover:text-[#CCFF00] ml-0.5" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>

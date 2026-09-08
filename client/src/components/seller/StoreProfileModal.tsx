@@ -177,14 +177,14 @@ export function StoreProfileModal({ isOpen, onClose }: StoreProfileModalProps) {
               </span>
 
               {/* Exact Mock Badge */}
-              <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-neutral-900/90 border border-neutral-700/80 shadow-sm">
-                <span className="h-6 w-6 rounded-full bg-[#CCFF00] text-black font-black text-xs flex items-center justify-center select-none shadow-[0_0_8px_rgba(204,255,0,0.4)]">
+              <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border shadow-sm bg-neutral-100 border-neutral-300/80 text-neutral-900 dark:bg-neutral-900/80 dark:border-neutral-800 dark:text-white">
+                <span className="h-6 w-6 rounded-full font-black text-xs flex items-center justify-center select-none shadow-sm bg-emerald-500 text-white dark:bg-[#CCFF00] dark:text-black dark:shadow-[0_0_8px_rgba(204,255,0,0.35)]">
                   {initialLetter}
                 </span>
-                <span className="text-xs font-bold text-white truncate max-w-[140px]">
+                <span className="text-xs font-bold text-neutral-900 dark:text-white truncate max-w-[140px]">
                   {storeName || 'My Store'}
                 </span>
-                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60">
                   {sellerProfile?.kyc_status === 'verified' ? 'VERIFIED' : 'PENDING'}
                 </span>
               </div>
