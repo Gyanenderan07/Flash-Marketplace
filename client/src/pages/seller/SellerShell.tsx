@@ -258,7 +258,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
   }, [breadcrumbs, location, title]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F4F5F7] dark:bg-[#000000] text-neutral-900 dark:text-white transition-colors duration-200">
+    <div className="flex h-screen w-screen max-w-[100vw] overflow-hidden bg-[#F4F5F7] dark:bg-[#000000] text-neutral-900 dark:text-white transition-colors duration-200">
 
       {/* ─── MOBILE OVERLAY ─── */}
       <AnimatePresence>
@@ -275,7 +275,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
       {/* ─── SIDEBAR (Desktop Fixed/Sticky Navigation) ─── */}
       <aside
-        className={`h-screen ${collapsed ? 'w-[68px]' : 'w-64'} shrink-0 hidden md:flex flex-col justify-between border-r border-neutral-200 dark:border-neutral-800/80 bg-[#FFFFFF] dark:bg-[#000000] shadow-sm dark:shadow-none sticky top-0 left-0 z-30 transition-all duration-200 select-none`}
+        className={`h-screen ${collapsed ? 'w-[68px]' : 'w-60 xl:w-64'} shrink-0 hidden md:flex flex-col justify-between border-r border-neutral-200 dark:border-neutral-800/80 bg-[#FFFFFF] dark:bg-[#000000] shadow-sm dark:shadow-none sticky top-0 left-0 z-30 transition-all duration-200 select-none`}
       >
         {/* Brand Logo Header */}
         <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-neutral-200 dark:border-neutral-800/80 px-4">
@@ -401,9 +401,10 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
       </AnimatePresence>
 
       {/* ─── INDEPENDENT SCROLLING VIEWPORT ─── */}
-      <main className="flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-6 sm:p-8 bg-[#F4F5F7] dark:bg-[#000000] transition-colors duration-200">
-        {/* ─── EXPANDED TOP NAVBAR WITH BREATHING ROOM ─── */}
-        <header className="h-16 w-full flex items-center justify-between px-6 py-4 rounded-2xl bg-[#FFFFFF] dark:bg-[#0D1117]/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800/60 shadow-sm mb-6 shrink-0 transition-colors duration-200">
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-5 bg-[#F4F5F7] dark:bg-[#000000] transition-colors duration-200">
+        <div className="w-full max-w-[1600px] mx-auto space-y-5">
+          {/* ─── EXPANDED TOP NAVBAR WITH BREATHING ROOM ─── */}
+          <header className="h-16 w-full flex items-center justify-between px-4 sm:px-6 py-3 rounded-2xl bg-[#FFFFFF] dark:bg-[#0D1117]/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800/60 shadow-sm shrink-0 transition-colors duration-200">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile hamburger */}
             <button
@@ -599,7 +600,8 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
         <div className="w-full min-w-0">
           {children}
         </div>
-      </main>
+      </div>
+    </main>
     </div>
   );
 }
