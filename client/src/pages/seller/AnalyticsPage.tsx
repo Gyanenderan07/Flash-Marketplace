@@ -333,7 +333,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── 4 REAL-TIME HIGH-VELOCITY METRIC CARDS ── */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Card 1: Gross Revenue Velocity */}
           <motion.div
             whileHover={{ y: -2 }}
@@ -350,107 +350,111 @@ export default function AnalyticsPage() {
                 <TrendingUp size={14} />
               </span>
             </div>
-            <div className="mt-4 text-2xl sm:text-3xl text-emerald-700 dark:text-[#CCFF00]">
-              <AnimatedCounter value={grossRevenueVelocity} prefix="₹" />
+            <div className="mt-3">
+              <div className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${C.text}`}>
+                {formatINR(grossRevenueVelocity)}
+              </div>
+              <p className={`mt-1 text-[11px] ${C.muted}`}>
+                Across {filteredOrders.length} processed customer order{filteredOrders.length === 1 ? '' : 's'}.
+              </p>
             </div>
-            <p className={`mt-1 text-[11px] ${C.muted}`}>
-              Live orders ({range === 'all' ? 'all-time' : `last ${range} days`}).
-            </p>
           </motion.div>
 
-          {/* Card 2: Order Fulfillment Velocity */}
+          {/* Card 2: Wholesale Fulfillment Rate */}
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('comparison')}
-            className={`cursor-pointer rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
               chartMode === 'comparison' ? 'ring-2 ring-[#CCFF00]' : ''
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>
-                Fulfillment Velocity
+              <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-sky-400">
+                Fulfillment Rate
               </span>
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-500/10 text-blue-500 dark:text-blue-400">
-                <Truck size={14} />
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-100 dark:bg-sky-500/20 text-blue-700 dark:text-sky-400">
+                <CheckCircle2 size={14} />
               </span>
             </div>
-            <div className={`mt-4 text-2xl sm:text-3xl ${C.text}`}>
-              <AnimatedCounter value={fulfillmentVelocity.total} suffix=" Orders" />
-            </div>
-            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-              <span className="rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/50 px-2 py-0.5 text-[9px] font-mono font-bold text-amber-700 dark:text-amber-400">
-                {fulfillmentVelocity.pending} New
-              </span>
-              <span className="rounded-full bg-purple-50 dark:bg-purple-950/40 border border-purple-300 dark:border-purple-800/50 px-2 py-0.5 text-[9px] font-mono font-bold text-purple-700 dark:text-purple-400">
-                {fulfillmentVelocity.awaiting_dispatch} Packing
-              </span>
-              <span className="rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800/50 px-2 py-0.5 text-[9px] font-mono font-bold text-blue-700 dark:text-blue-400">
-                {fulfillmentVelocity.shipped} Shipped
-              </span>
+            <div className="mt-3">
+              <div className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${C.text}`}>
+                {filteredOrders.length > 0
+                  ? `${Math.round(((fulfillmentVelocity.shipped + fulfillmentVelocity.delivered) / filteredOrders.length) * 100)}%`
+                  : '100%'}
+              </div>
+              <p className={`mt-1 text-[11px] ${C.muted}`}>
+                {fulfillmentVelocity.delivered} delivered · {fulfillmentVelocity.awaiting_dispatch + fulfillmentVelocity.pending} active
+              </p>
             </div>
           </motion.div>
 
-          {/* Card 3: Active SKU Inventory Units */}
+          {/* Card 3: Live Units in Stock */}
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('inventory_share')}
-            className={`cursor-pointer rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
               chartMode === 'inventory_share' ? 'ring-2 ring-[#CCFF00]' : ''
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>
-                Active Catalog Units
+              <span className="text-[10px] font-black uppercase tracking-widest text-violet-600 dark:text-purple-400">
+                Total Stock In-Hand
               </span>
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-neutral-200 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-300">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-violet-100 dark:bg-purple-500/20 text-violet-700 dark:text-purple-400">
                 <Package size={14} />
               </span>
             </div>
-            <div className={`mt-4 text-2xl sm:text-3xl ${C.text}`}>
-              <AnimatedCounter value={products.filter(p => (p.status || 'active') === 'active').length} suffix=" Active SKUs" />
+            <div className="mt-3">
+              <div className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${C.text}`}>
+                {totalStockUnits.toLocaleString()}
+              </div>
+              <p className={`mt-1 text-[11px] ${C.muted}`}>
+                Distributed across {products.length} live catalog product{products.length === 1 ? '' : 's'}.
+              </p>
             </div>
-            <p className={`mt-1 text-[11px] ${C.muted}`}>
-              {totalStockUnits.toLocaleString('en-IN')} total units across {products.length} live catalog items.
-            </p>
           </motion.div>
 
-          {/* Card 4: Stock Depletion Radar Alert */}
+          {/* Card 4: Restock Depletion Radar */}
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('depletion_radar')}
-            className={`cursor-pointer rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
               chartMode === 'depletion_radar' ? 'ring-2 ring-amber-400' : ''
-            } ${depletionItems.length > 0 ? 'border-amber-400/40 bg-amber-50/50 dark:bg-amber-500/5' : ''}`}
+            }`}
           >
             <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${depletionItems.length > 0 ? 'text-amber-700 dark:text-amber-400' : C.muted}`}>
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
                 Restock Radar
               </span>
-              <span className={`grid h-7 w-7 place-items-center rounded-lg ${depletionItems.length > 0 ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'}`}>
-                {depletionItems.length > 0 ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                <AlertTriangle size={14} />
               </span>
             </div>
-            <div className={`mt-4 text-2xl sm:text-3xl font-black ${depletionItems.length > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-              <AnimatedCounter value={depletionItems.length} suffix=" Low Stock" />
+            <div className="mt-3">
+              <div className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${
+                depletionItems.length > 0 ? 'text-amber-600 dark:text-amber-400' : C.text
+              }`}>
+                {depletionItems.length}
+              </div>
+              <p className={`mt-1 text-[11px] ${C.muted}`}>
+                {depletionItems.length > 0
+                  ? `${depletionItems.length} SKU(s) nearing or below threshold (≤ 5 units)`
+                  : 'All catalog SKUs adequately stocked above threshold.'}
+              </p>
             </div>
-            <p className={`mt-1 text-[11px] ${C.muted}`}>
-              {depletionItems.length > 0
-                ? `${depletionItems.length} SKU(s) nearing or below threshold (≤ 5 units)`
-                : 'All catalog SKUs adequately stocked above threshold.'}
-            </p>
           </motion.div>
         </div>
 
         {/* ── INTERACTIVE CHART MODE SWITCHER ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none p-1.5 rounded-2xl bg-neutral-200/80 dark:bg-[#14171F]">
+          <div className="flex items-center gap-1.5 overflow-x-auto horizontal-scroll-rail p-1.5 rounded-2xl bg-neutral-200/80 dark:bg-[#14171F]">
             {CHART_MODES.map(mode => {
               const isSelected = chartMode === mode.id;
               return (
                 <button
                   key={mode.id}
                   onClick={() => setChartMode(mode.id)}
-                  className={`relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`shrink-0 relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
                     isSelected
                       ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-md font-extrabold'
                       : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'

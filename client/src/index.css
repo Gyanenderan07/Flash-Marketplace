@@ -403,6 +403,38 @@ html:not(.dark) * {
   border-radius: 4px;
 }
 
+/* Horizontal scroll rail with sleek responsive scrollbar */
+.horizontal-scroll-rail {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(204, 255, 0, 0.4) transparent;
+}
+.horizontal-scroll-rail::-webkit-scrollbar {
+  height: 4px;
+}
+.horizontal-scroll-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+.horizontal-scroll-rail::-webkit-scrollbar-thumb {
+  background: rgba(204, 255, 0, 0.3);
+  border-radius: 9999px;
+}
+.horizontal-scroll-rail::-webkit-scrollbar-thumb:hover {
+  background: #CCFF00;
+}
+
+html:not(.dark) .horizontal-scroll-rail {
+  scrollbar-color: rgba(22, 163, 74, 0.4) transparent;
+}
+html:not(.dark) .horizontal-scroll-rail::-webkit-scrollbar-thumb {
+  background: rgba(22, 163, 74, 0.3);
+}
+html:not(.dark) .horizontal-scroll-rail::-webkit-scrollbar-thumb:hover {
+  background: #16A34A;
+}
+
 /* ============================================================
    CHART OVERRIDES (recharts)
    ============================================================ */

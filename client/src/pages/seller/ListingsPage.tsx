@@ -25,6 +25,7 @@ import { ConfirmModal } from '@/components/seller/ConfirmModal';
 import { BulkActionBar } from '@/components/seller/BulkActionBar';
 import { TieredPricingTable } from '@/components/seller/TieredPricingTable';
 import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
+import { CategoryChipRow } from '@/components/shared/CategoryChipRow';
 import SellerShell from './SellerShell';
 
 // ─── Constants & Sort Options ──────────────────────────────────────────────────
@@ -551,40 +552,17 @@ export default function ListingsPage() {
         </button>
       </div>
 
-      {/* ── Category filtering rail without ugly scrollbar ── */}
-      <div className="w-full relative flex items-center mb-5">
-        <LayoutGroup id="listings-category-rail">
-          <div className="w-full flex items-center gap-2 overflow-x-auto py-2.5 px-2 scroll-smooth no-scrollbar touch-pan-x select-none">
-            {['All', ...VALID_CATEGORIES].map(cat => {
-              const isCatActive = catFilter === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={(e) => {
-                    setCatFilter(cat);
-                    setPage(1);
-                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                  }}
-                  className={`relative shrink-0 whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-150 active:scale-95 cursor-pointer ${
-                    isCatActive
-                      ? 'text-black shadow-[0_0_14px_rgba(204,255,0,0.35)] font-extrabold'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700/60'
-                  }`}
-                >
-                  {isCatActive && (
-                    <motion.div
-                      layoutId="activeListingsCatGlow"
-                      className="absolute inset-0 rounded-xl bg-[#CCFF00] -z-0"
-                      transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative z-10">{cat}</span>
-                </button>
-              );
-            })}
-          </div>
-        </LayoutGroup>
-      </div>
+      {/* ── Category filtering rail ── */}
+      <CategoryChipRow
+        categories={['All', ...VALID_CATEGORIES]}
+        selectedCategory={catFilter}
+        onSelectCategory={(cat) => {
+          setCatFilter(cat);
+          setPage(1);
+        }}
+        layoutGroupId="listings-category-rail"
+        className="mb-5"
+      />
 
       {/* ── Stats & Sort bar ── */}
       {!isLoading && (

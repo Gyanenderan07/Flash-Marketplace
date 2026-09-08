@@ -243,11 +243,11 @@ export default function OrdersPage() {
       </div>
 
       {/* Status tabs */}
-      <div className={`mb-4 flex overflow-x-auto scrollbar-none gap-1 border-b pb-3 ${C.divider}`}>
+      <div className={`mb-4 flex overflow-x-auto horizontal-scroll-rail gap-1.5 border-b pb-3 ${C.divider}`}>
         {STATUS_TABS.map(tab => (
           <button key={tab.id}
             onClick={() => { setStatusTab(tab.id); setPage(1); }}
-            className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+            className={`flex-shrink-0 shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
               statusTab === tab.id
                 ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
                 : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
@@ -291,7 +291,7 @@ export default function OrdersPage() {
         <>
           {/* Desktop table */}
           <div className={`hidden overflow-hidden rounded-2xl border md:block ${C.card}`}>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto horizontal-scroll-rail">
               <table className="w-full text-left text-xs">
                 <thead className={`border-b text-[9px] font-black uppercase tracking-widest ${C.divider} ${C.th}`}>
                   <tr>

@@ -180,11 +180,11 @@ export default function HealthPage() {
       {/* KPI Metric cards */}
       <div className={`mb-2 text-[10px] font-black uppercase tracking-widest ${C.muted}`}>Performance KPIs</div>
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {metrics.map(m => (
             <div key={m.id} className={`rounded-2xl border p-5 ${metricBg(m.status)}`}>
               <div className="flex items-start justify-between gap-3">

@@ -127,14 +127,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className={`mb-6 flex gap-1.5 border-b pb-3 ${C.divider}`}>
+      <div className={`mb-6 flex overflow-x-auto horizontal-scroll-rail gap-1.5 border-b pb-3 ${C.divider}`}>
         {[
           { id: 'profile',       label: 'Store Profile', icon: Settings2 },
           { id: 'team',          label: 'Team Members',  icon: Users     },
           { id: 'notifications', label: 'Notifications', icon: Settings2 },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id as SettingsTab)}
-            className={`flex-shrink-0 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
               activeTab === tab.id ? 'bg-[#CCFF00] text-black' : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
             }`}>
             {tab.label}

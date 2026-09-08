@@ -402,9 +402,9 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
       {/* ─── INDEPENDENT SCROLLING VIEWPORT ─── */}
       <main className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-5 bg-[#F4F5F7] dark:bg-[#000000] transition-colors duration-200">
-        <div className="w-full max-w-[1600px] mx-auto space-y-5">
+        <div className="w-full max-w-7xl mx-auto space-y-5">
           {/* ─── EXPANDED TOP NAVBAR WITH BREATHING ROOM ─── */}
-          <header className="h-16 w-full flex items-center justify-between px-4 sm:px-6 py-3 rounded-2xl bg-[#FFFFFF] dark:bg-[#0D1117]/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800/60 shadow-sm shrink-0 transition-colors duration-200">
+          <header className="min-h-16 w-full flex items-center justify-between px-4 sm:px-6 py-2.5 rounded-2xl bg-[#FFFFFF] dark:bg-[#0D1117]/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800/60 shadow-sm shrink-0 transition-colors duration-200 overflow-x-auto horizontal-scroll-rail">
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile hamburger */}
             <button

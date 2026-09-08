@@ -179,10 +179,10 @@ export default function PromotionsPage() {
       </div>
 
       {/* Sub-nav Tabs */}
-      <div className="mb-6 flex items-center gap-2 border-b border-neutral-200 dark:border-[#1F2430] pb-2">
+      <div className="mb-6 flex items-center overflow-x-auto horizontal-scroll-rail gap-2 border-b border-neutral-200 dark:border-[#1F2430] pb-2">
         <button
           onClick={() => setSubTab('coupons')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
+          className={`shrink-0 whitespace-nowrap flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
             subTab === 'coupons'
               ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
               : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
@@ -192,7 +192,7 @@ export default function PromotionsPage() {
         </button>
         <button
           onClick={() => setSubTab('volume_tiers')}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
+          className={`shrink-0 whitespace-nowrap flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
             subTab === 'volume_tiers'
               ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
               : `${C.muted} hover:text-neutral-900 dark:hover:text-white`

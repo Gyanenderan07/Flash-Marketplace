@@ -201,14 +201,14 @@ export default function PayoutsPage() {
       </div>
 
       {/* Tabs */}
-      <div className={`mb-4 flex gap-1.5 border-b pb-3 ${C.divider}`}>
+      <div className={`mb-4 flex overflow-x-auto horizontal-scroll-rail gap-1.5 border-b pb-3 ${C.divider}`}>
         {[
           { id: 'ledger',  label: 'Transaction Ledger' },
           { id: 'payouts', label: 'Payout History' },
         ].map(tab => (
           <button key={tab.id}
             onClick={() => setActiveTab(tab.id as 'ledger' | 'payouts')}
-            className={`rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
               activeTab === tab.id
                 ? 'bg-[#CCFF00] text-black'
                 : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
@@ -228,10 +228,10 @@ export default function PayoutsPage() {
       ) : activeTab === 'ledger' ? (
         <>
           {/* Ledger type filter */}
-          <div className="mb-4 flex flex-wrap gap-1.5">
+          <div className="mb-4 flex overflow-x-auto horizontal-scroll-rail pb-1 gap-1.5">
             {(['all', 'sale', 'fee', 'refund', 'tax'] as LedgerFilter[]).map(f => (
               <button key={f} onClick={() => setLedgerFilter(f)}
-                className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
                   ledgerFilter === f ? 'bg-[#CCFF00] text-black' : `border ${C.well} ${C.muted}`
                 }`}>
                 {f}
@@ -243,7 +243,7 @@ export default function PayoutsPage() {
             <EmptyState icon={Wallet} title="No transactions" body="Ledger entries will appear as orders are placed and processed." />
           ) : (
             <div className={`overflow-hidden rounded-2xl border ${C.card}`}>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto horizontal-scroll-rail">
                 <table className="w-full text-left text-xs">
                   <thead className={`border-b text-[9px] font-black uppercase tracking-widest ${C.divider} ${C.th}`}>
                     <tr>
@@ -283,7 +283,7 @@ export default function PayoutsPage() {
           <EmptyState icon={Wallet} title="No payout history" body="Payouts will appear here once your balance is settled by the Flash finance team." />
         ) : (
           <div className={`overflow-hidden rounded-2xl border ${C.card}`}>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto horizontal-scroll-rail">
               <table className="w-full text-left text-xs">
                 <thead className={`border-b text-[9px] font-black uppercase tracking-widest ${C.divider} ${C.th}`}>
                   <tr>

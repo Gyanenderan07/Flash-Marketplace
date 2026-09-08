@@ -121,7 +121,7 @@ export default function InventoryPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+      <div className="mb-6 grid gap-3 grid-cols-1 sm:grid-cols-3">
         {[
           { label: 'Total SKUs', value: products.length, sub: 'Active in catalog' },
           { label: 'Total Units', value: products.reduce((a, p) => a + (p.stock ?? 0), 0), sub: 'Across all products' },
@@ -147,14 +147,14 @@ export default function InventoryPage() {
         </div>
         <button
           onClick={() => { setLowStockOnly(l => !l); setPage(1); }}
-          className={`rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-wider transition ${
+          className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-wider transition ${
             lowStockOnly ? 'bg-amber-500/20 border border-amber-500/30 text-amber-400' : `border ${C.well} ${C.muted}`
           }`}
         >
           Low Stock Only
         </button>
         <button onClick={() => { load(); toast.success('Refreshed'); }}
-          className={`rounded-full border p-2 transition ${C.well} ${C.muted} hover:text-[#CCFF00]`}>
+          className={`shrink-0 rounded-full border p-2 transition ${C.well} ${C.muted} hover:text-[#CCFF00]`}>
           <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-[#CCFF00]' : ''} />
         </button>
       </div>
@@ -174,7 +174,7 @@ export default function InventoryPage() {
         <>
           {/* Desktop table */}
           <div className={`hidden overflow-hidden rounded-2xl border md:block ${C.card}`}>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto horizontal-scroll-rail">
               <table className="w-full text-left text-xs">
                 <thead className={`border-b text-[9px] font-black uppercase tracking-widest ${C.divider} ${C.th}`}>
                   <tr>

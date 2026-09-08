@@ -83,7 +83,7 @@ export default function ReturnsPage() {
       </div>
 
       {/* KPIs */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+      <div className="mb-6 grid gap-3 grid-cols-1 sm:grid-cols-3">
         {[
           { label: 'Total Returns', value: returns.length, color: C.text },
           { label: 'Pending',    value: returns.filter(r => r.status === 'requested').length, color: 'text-amber-400' },

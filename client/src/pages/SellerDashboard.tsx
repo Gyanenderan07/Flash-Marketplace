@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { ScrollableTabRow } from '@/components/shared/ScrollableTabRow';
+import { CategoryChipRow } from '@/components/shared/CategoryChipRow';
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis
@@ -843,44 +845,13 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           })}
         </div>
 
-        {/* ── TAB NAVIGATION (RESPONSIVE DUAL-CLUSTER LAYOUT) ── */}
-        <LayoutGroup id="dashboard-nav-tabs">
-          <div className="w-full flex items-center justify-between gap-3 mb-6 flex-wrap xl:flex-nowrap">
-            {/* 1. Scrollable / Responsive Tab Rail */}
-            <div className="flex-1 min-w-0 flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-100 dark:bg-[#0D1117] border border-neutral-200 dark:border-neutral-800/80 shadow-inner overflow-x-auto scrollbar-none no-scrollbar scroll-smooth touch-pan-x">
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.id;
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={(e) => {
-                      switchTab(tab.id);
-                      e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                    }}
-                    className={`relative shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                      isActive
-                        ? "bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)] font-extrabold"
-                        : "text-neutral-700 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/70 dark:hover:bg-neutral-900/60"
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeTabGlow"
-                        className="absolute inset-0 rounded-xl bg-[#CCFF00] -z-0"
-                        transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center gap-2 shrink-0">
-                      <Icon size={14} className="shrink-0" />
-                      <span className="whitespace-nowrap shrink-0">{tab.label}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* 2. Standalone Distinct Action CTA */}
+        {/* ── TAB NAVIGATION (SHARED RESPONSIVE COMPONENT) ── */}
+        <ScrollableTabRow
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={(id) => switchTab(id as TabId)}
+          layoutGroupId="dashboard-nav-tabs"
+          rightAction={
             <button
               onClick={openAddDrawer}
               className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700/80 text-neutral-900 dark:text-[#CCFF00] text-xs font-extrabold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-sm"
@@ -888,8 +859,8 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
               <span className="text-sm font-black leading-none text-[#15803D] dark:text-[#CCFF00]">+</span>
               <span className="whitespace-nowrap shrink-0">New Listing</span>
             </button>
-          </div>
-        </LayoutGroup>
+          }
+        />
 
         {/* ── TAB CONTENT ── */}
         <AnimatePresence mode="wait">
@@ -936,38 +907,16 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                 </div>
 
                 {/* Horizontal Category Rail */}
-                <div className="w-full relative flex items-center pt-1 border-t border-neutral-200/80 dark:border-neutral-800/80">
-                  <LayoutGroup id="category-filter-rail">
-                    <div className="w-full flex items-center gap-2 overflow-x-auto py-2.5 px-2 scroll-smooth no-scrollbar touch-pan-x select-none">
-                      {['All', ...VALID_CATEGORIES].map(cat => {
-                        const isCatActive = selectedCategory === cat;
-                        return (
-                          <button
-                            key={cat}
-                            onClick={(e) => {
-                              setSelectedCategory(cat);
-                              setCatalogPage(1);
-                              e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                            }}
-                            className={`relative shrink-0 whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-150 active:scale-95 cursor-pointer ${
-                              isCatActive
-                                ? 'text-black shadow-[0_0_14px_rgba(204,255,0,0.35)] font-extrabold'
-                                : 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700/60'
-                            }`}
-                          >
-                            {isCatActive && (
-                              <motion.div
-                                layoutId="activeCategoryGlow"
-                                className="absolute inset-0 rounded-xl bg-[#CCFF00] -z-0"
-                                transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                              />
-                            )}
-                            <span className="relative z-10">{cat}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </LayoutGroup>
+                <div className="w-full pt-1 border-t border-neutral-200/80 dark:border-neutral-800/80">
+                  <CategoryChipRow
+                    categories={['All', ...VALID_CATEGORIES]}
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={(cat) => {
+                      setSelectedCategory(cat);
+                      setCatalogPage(1);
+                    }}
+                    layoutGroupId="dashboard-category-rail"
+                  />
                 </div>
               </div>
 
