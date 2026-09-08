@@ -66,7 +66,7 @@ export function ScrollableTabRow({
                   onTabChange(tab.id);
                   e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }}
-                className={`relative shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                className={`relative shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-[background-color,color,border-color,box-shadow] duration-200 ${
                   isActive
                     ? "bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)] font-extrabold"
                     : "text-neutral-700 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/70 dark:hover:bg-neutral-900/60"

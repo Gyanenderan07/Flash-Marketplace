@@ -74,8 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {
       id: authUser.id,
       auth_user_id: authUser.id,
-      business_name: (authUser.user_metadata?.business_name as string) || 'Flash Merchant',
-      store_name: (authUser.user_metadata?.store_name as string) || 'Flash Store',
+      business_name: (authUser.user_metadata?.business_name as string) || (authUser.user_metadata?.store_name as string) || 'Flash Merchant',
       legal_name: (authUser.user_metadata?.business_name as string) || 'Flash Merchant',
       tax_id: null,
       kyc_status: 'verified',

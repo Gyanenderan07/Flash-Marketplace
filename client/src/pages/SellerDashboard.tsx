@@ -175,7 +175,7 @@ function Card({ children, className = '', hover = true }: { children: React.Reac
   const { isDark } = useTheme();
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200 ${
+      className={`rounded-2xl border transition-[background-color,border-color,box-shadow] duration-200 ${
         isDark
           ? `border-neutral-800/80 bg-[#0D1117] ${hover ? 'hover:border-[#CCFF00]/30 hover:shadow-[0_4px_24px_rgba(0,0,0,0.6)]' : ''}`
           : `border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)] ${hover ? 'hover:border-[#CCFF00]/60 hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.12)]' : ''}`
@@ -506,10 +506,20 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
       }
     }
     setFormData({
-      name: p.name, brand: p.brand || 'Flash Verified', category: catMatched,
-      sku: generateSKU(), price: String(p.price),
+      ...EMPTY_FORM,
+      name: p.name,
+      brand: p.brand || 'Flash Verified',
+      category: catMatched,
+      sku: (p as any).sku || generateSKU(),
+      price: String(p.price),
       original_price: String(p.original_price || p.price),
-      stock: String(p.stock), description: p.description || '', primary_image: p.primary_image || ''
+      stock: String(p.stock),
+      moq: String((p as any).moq || '1'),
+      low_stock_threshold: String((p as any).low_stock_threshold || '5'),
+      status: (p as any).status || 'active',
+      description: p.description || '',
+      primary_image: p.primary_image || '',
+      hover_images: Array.isArray(p.hover_images) ? p.hover_images.join(', ') : (p.hover_images || '')
     });
     setFormErrors({});
     setDrawerStep(1);
@@ -659,7 +669,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
     list.sort((a, b) => {
       switch (catalogSortKey) {
         case 'oldest':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
         case 'price_asc':
           return (a.price || 0) - (b.price || 0);
         case 'price_desc':
@@ -672,7 +682,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           return a.name.localeCompare(b.name);
         case 'newest':
         default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       }
     });
 
@@ -844,7 +854,7 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           rightAction={
             <button
               onClick={openAddDrawer}
-              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700/80 text-neutral-900 dark:text-[#CCFF00] text-xs font-extrabold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-sm"
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700/80 text-neutral-900 dark:text-[#CCFF00] text-xs font-extrabold uppercase tracking-wider transition-[background-color,border-color,color,transform] duration-200 active:scale-95 shadow-sm"
             >
               <span className="text-sm font-black leading-none text-[#15803D] dark:text-[#CCFF00]">+</span>
               <span className="whitespace-nowrap shrink-0">New Listing</span>

@@ -221,7 +221,7 @@ export default function PayoutsPage() {
       {error ? (
         <div className={`flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-2xl border p-12 ${C.card}`}>
           <AlertCircle className="h-8 w-8 text-red-400" />
-          <button onClick={load} className="text-xs font-bold text-[#CCFF00]">Retry</button>
+          <button onClick={() => load()} className="text-xs font-bold text-[#CCFF00]">Retry</button>
         </div>
       ) : isLoading ? (
         <SkeletonTable rows={6} cols={4} />

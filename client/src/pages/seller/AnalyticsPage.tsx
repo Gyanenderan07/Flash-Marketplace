@@ -250,26 +250,26 @@ export default function AnalyticsPage() {
   }, [categoryDistribution]);
 
   // ── Design Tokens ──
-  const C = {
+  const C = useMemo(() => ({
     card:    isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
     well:    isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
     text:    isDark ? 'text-white' : 'text-neutral-900',
     muted:   isDark ? 'text-neutral-400' : 'text-neutral-500',
     divider: isDark ? 'border-[#1F2430]' : 'border-neutral-200',
-  };
+  }), [isDark]);
 
-  const primaryAccent = isDark ? '#CCFF00' : '#15803D';
-  const gridStroke    = isDark ? '#1F2430' : '#E5E7EB';
-  const axisText      = isDark ? '#9CA3AF' : '#6B7280';
+  const primaryAccent = useMemo(() => isDark ? '#CCFF00' : '#15803D', [isDark]);
+  const gridStroke    = useMemo(() => isDark ? '#1F2430' : '#E5E7EB', [isDark]);
+  const axisText      = useMemo(() => isDark ? '#9CA3AF' : '#6B7280', [isDark]);
 
-  const tooltipStyle = {
+  const tooltipStyle = useMemo(() => ({
     backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
     border: `1px solid ${isDark ? '#1F2430' : '#E5E7EB'}`,
     borderRadius: '12px',
     color: isDark ? '#FFFFFF' : '#111827',
     fontSize: '11px',
     boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.7)' : '0 10px 30px rgba(0,0,0,0.1)',
-  };
+  }), [isDark]);
 
   const CHART_MODES = [
     { id: 'revenue',         label: '📈 Revenue Trend',       desc: 'Area Trendline' },
@@ -338,7 +338,7 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('revenue')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
               chartMode === 'revenue' ? 'ring-2 ring-[#CCFF00]' : ''
             }`}
           >
@@ -364,7 +364,7 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('comparison')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
               chartMode === 'comparison' ? 'ring-2 ring-[#CCFF00]' : ''
             }`}
           >
@@ -392,7 +392,7 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('inventory_share')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
               chartMode === 'inventory_share' ? 'ring-2 ring-[#CCFF00]' : ''
             }`}
           >
@@ -418,7 +418,7 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('depletion_radar')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-all ${C.card} ${
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
               chartMode === 'depletion_radar' ? 'ring-2 ring-amber-400' : ''
             }`}
           >

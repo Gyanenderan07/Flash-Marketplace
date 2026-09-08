@@ -52,7 +52,7 @@ export function CategoryChipRow({
                   onSelectCategory(cat);
                   e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                 }}
-                className={`relative shrink-0 whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-150 active:scale-95 cursor-pointer ${
+                className={`relative shrink-0 whitespace-nowrap px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-[background-color,color,border-color,box-shadow,transform] duration-150 active:scale-95 cursor-pointer ${
                   isCatActive
                     ? 'text-black shadow-[0_0_14px_rgba(204,255,0,0.35)] font-extrabold'
                     : 'bg-neutral-100 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700/60'

@@ -30,7 +30,7 @@ export function EmptyState({ icon: Icon, title, body, actionLabel, onAction, cla
           whileHover={{ y: -1, boxShadow: '0 0 20px rgba(204,255,0,0.35)' }}
           whileTap={{ scale: 0.97 }}
           onClick={onAction}
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-neutral-900 dark:bg-black px-6 py-2.5 text-xs font-black uppercase tracking-widest text-[#CCFF00] shadow-[0_0_16px_rgba(204,255,0,0.2)] transition-all duration-200 ease-out active:scale-95"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-neutral-900 dark:bg-black px-6 py-2.5 text-xs font-black uppercase tracking-widest text-[#CCFF00] shadow-[0_0_16px_rgba(204,255,0,0.2)] transition-[background-color,color,box-shadow,transform] duration-200 ease-out active:scale-95"
         >
           {actionLabel}
         </motion.button>

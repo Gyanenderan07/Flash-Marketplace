@@ -275,7 +275,7 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
       {/* ─── SIDEBAR (Desktop Fixed/Sticky Navigation) ─── */}
       <aside
-        className={`h-full ${collapsed ? 'w-[68px]' : 'w-60 xl:w-64'} shrink-0 hidden md:flex flex-col justify-between border-r border-neutral-200 dark:border-neutral-800/80 bg-[#FFFFFF] dark:bg-[#000000] shadow-sm dark:shadow-none sticky top-0 left-0 z-30 transition-all duration-200 select-none`}
+        className={`h-full ${collapsed ? 'w-[68px]' : 'w-60 xl:w-64'} shrink-0 hidden md:flex flex-col justify-between border-r border-neutral-200 dark:border-neutral-800/80 bg-[#FFFFFF] dark:bg-[#000000] shadow-sm dark:shadow-none sticky top-0 left-0 z-30 transition-[width,background-color,border-color,color] duration-200 select-none`}
       >
         {/* Brand Logo Header */}
         <div className="flex h-16 flex-shrink-0 items-center justify-between border-b border-neutral-200 dark:border-neutral-800/80 px-4">
@@ -463,15 +463,15 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
-              className="shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2.5 text-neutral-800 dark:text-neutral-200 hover:text-[#CCFF00] transition shadow-sm"
+              className="shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2.5 text-neutral-800 dark:text-neutral-200 hover:text-[#CCFF00] transition-colors duration-200 shadow-sm"
               title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
             >
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={theme}
-                  initial={{ opacity: 0, rotate: -20 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 20 }}
+                  initial={{ opacity: 0, scale: 0.8, rotate: -25 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, rotate: 25 }}
                   transition={{ duration: 0.15 }}
                   className="block"
                 >

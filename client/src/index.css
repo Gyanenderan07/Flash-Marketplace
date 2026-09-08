@@ -9,15 +9,16 @@
   --font-mono: 'JetBrains Mono', 'DM Mono', monospace;
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  --color-obsidian: #000000;
-  --color-surface1: #0D1117;
-  --color-surface2: #12161F;
-  --color-neon: #CCFF00;
-  --color-borderDark: #1F2430;
-  --color-success: #16A34A;
-  --color-warning: #F59E0B;
-  --color-danger: #DC2626;
-  --color-info: #2563EB;
+  --color-obsidian: var(--color-obsidian);
+  --color-surface1: var(--color-surface1);
+  --color-surface2: var(--color-surface2);
+  --color-neon: var(--color-neon);
+  --color-borderDark: var(--color-borderDark);
+  --color-border-dark: var(--color-borderDark);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+  --color-info: var(--color-info);
 }
 
 /* ============================================================
@@ -27,6 +28,17 @@
 :root,
 [data-theme="dark"],
 .dark {
+  /* Design Tokens as CSS Variables */
+  --color-obsidian:    #000000;
+  --color-surface1:    #0D1117;
+  --color-surface2:    #12161F;
+  --color-neon:        #CCFF00;
+  --color-borderDark:  #1F2430;
+  --color-border-dark: #1F2430;
+  --color-success:     #16A34A;
+  --color-warning:     #F59E0B;
+  --color-danger:      #DC2626;
+  --color-info:        #2563EB;
   /* Base surfaces */
   --bg-base:        #000000;
   --bg-card:        #0D1117;
@@ -76,6 +88,18 @@
 
 [data-theme="light"],
 .light {
+  /* Design Tokens as CSS Variables */
+  --color-obsidian:    #F8F9FA;
+  --color-surface1:    #FFFFFF;
+  --color-surface2:    #F1F3F5;
+  --color-neon:        #CCFF00;
+  --color-borderDark:  #E5E7EB;
+  --color-border-dark: #E5E7EB;
+  --color-success:     #16A34A;
+  --color-warning:     #D97706;
+  --color-danger:      #DC2626;
+  --color-info:        #2563EB;
+
   --bg-base:        #F4F5F7;
   --bg-card:        #FFFFFF;
   --bg-card-alt:    #F1F3F5;
@@ -135,25 +159,26 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Buttery 120fps Theme & Color Transitions */
+/* Scoped, GPU-friendly color transitions for theme changes (never layout properties) */
+body, aside {
+  will-change: background-color, color;
+}
+
 body {
   background: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans, 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Smooth surface transition on theme toggling (Buttery 120fps GPU accelerated) */
-main, aside, header, nav, .card-surface, .theme-transition {
-  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: background-color, border-color, box-shadow;
+body,
+aside,
+header,
+main {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 button, a, input, select, textarea { font: inherit; }
