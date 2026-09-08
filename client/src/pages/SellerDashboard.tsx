@@ -843,11 +843,11 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           })}
         </div>
 
-        {/* ── TAB NAVIGATION ── */}
-        <div className="w-full flex items-center justify-between gap-4 mb-6 flex-wrap lg:flex-nowrap">
-          {/* 1. Left Nav Tabs Rail */}
-          <LayoutGroup id="dashboard-nav-tabs">
-            <div className="flex-1 min-w-0 flex items-center gap-2 p-1.5 rounded-2xl bg-neutral-100 dark:bg-[#0D1117] border border-neutral-200 dark:border-neutral-800/80 shadow-inner overflow-x-auto scrollbar-none no-scrollbar scroll-smooth touch-pan-x">
+        {/* ── TAB NAVIGATION (RESPONSIVE DUAL-CLUSTER LAYOUT) ── */}
+        <LayoutGroup id="dashboard-nav-tabs">
+          <div className="w-full flex items-center justify-between gap-3 mb-6 flex-wrap xl:flex-nowrap">
+            {/* 1. Scrollable / Responsive Tab Rail */}
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-100 dark:bg-[#0D1117] border border-neutral-200 dark:border-neutral-800/80 shadow-inner overflow-x-auto scrollbar-none no-scrollbar scroll-smooth touch-pan-x">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 const Icon = tab.icon;
@@ -858,10 +858,10 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                       switchTab(tab.id);
                       e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
                     }}
-                    className={`relative shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                    className={`relative shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                       isActive
-                        ? "text-black shadow-[0_0_14px_rgba(204,255,0,0.35)]"
-                        : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-900/60"
+                        ? "bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)] font-extrabold"
+                        : "text-neutral-700 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/70 dark:hover:bg-neutral-900/60"
                     }`}
                   >
                     {isActive && (
@@ -871,25 +871,25 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                         transition={{ type: "spring", stiffness: 450, damping: 32 }}
                       />
                     )}
-                    <span className="relative z-10 flex items-center gap-2">
-                      <Icon size={14} />
+                    <span className="relative z-10 flex items-center gap-2 shrink-0">
+                      <Icon size={14} className="shrink-0" />
                       <span className="whitespace-nowrap shrink-0">{tab.label}</span>
                     </span>
                   </button>
                 );
               })}
             </div>
-          </LayoutGroup>
 
-          {/* 2. Standalone Independent Action CTA (Right Side) */}
-          <button
-            onClick={openAddDrawer}
-            className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-[#CCFF00] text-xs font-extrabold uppercase tracking-widest transition-all duration-200 hover:-translate-y-0.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] active:scale-95"
-          >
-            <span className="text-base leading-none font-black text-[#15803D] dark:text-[#CCFF00]">+</span>
-            <span className="whitespace-nowrap">New Listing</span>
-          </button>
-        </div>
+            {/* 2. Standalone Distinct Action CTA */}
+            <button
+              onClick={openAddDrawer}
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-700/80 text-neutral-900 dark:text-[#CCFF00] text-xs font-extrabold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-sm"
+            >
+              <span className="text-sm font-black leading-none text-[#15803D] dark:text-[#CCFF00]">+</span>
+              <span className="whitespace-nowrap shrink-0">New Listing</span>
+            </button>
+          </div>
+        </LayoutGroup>
 
         {/* ── TAB CONTENT ── */}
         <AnimatePresence mode="wait">
