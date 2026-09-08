@@ -9,3 +9,4 @@ export { StatusBadge }  from './StatusBadge';
 export { BulkActionBar } from './BulkActionBar';
 export { TieredPricingTable } from './TieredPricingTable';
 export { TableSortDropdown } from './TableSortDropdown';
+export { StoreProfileModal } from './StoreProfileModal';

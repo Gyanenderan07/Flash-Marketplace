@@ -11,6 +11,7 @@ export interface Seller {
   id: string;
   auth_user_id: string | null;
   business_name: string;
+  store_name?: string | null;
   legal_name: string | null;
   tax_id: string | null;
   kyc_status: 'pending' | 'verified' | 'rejected';

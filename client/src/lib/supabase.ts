@@ -526,21 +526,52 @@ export async function getSeller(sellerId?: string | null): Promise<Seller | null
 export async function updateSeller(patch: Partial<Seller>, sellerId?: string | null): Promise<Seller | null> {
   try {
     let targetId = sellerId;
-    if (!targetId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.id) targetId = user.id;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!targetId && user?.id) {
+      targetId = user.id;
     }
     if (!targetId) {
       targetId = '00000000-0000-0000-0000-000000000001';
     }
-    const { data, error } = await supabase
+
+    const payload: Record<string, unknown> = { ...patch };
+
+    // Sync store_name / business_name to user_metadata if available
+    if (user && (payload.store_name || payload.business_name)) {
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            ...(payload.store_name ? { store_name: payload.store_name } : {}),
+            ...(payload.business_name ? { business_name: payload.business_name } : {}),
+          },
+        });
+      } catch {
+        // Non-critical if auth metadata update fails
+      }
+    }
+
+    let { data, error } = await supabase
       .from('sellers')
-      .update(patch)
-      .eq('id', targetId)
+      .update(payload)
+      .or(`id.eq.${targetId},auth_user_id.eq.${targetId}`)
       .select()
-      .single();
+      .maybeSingle();
+
+    // If store_name column is missing on remote database schema, retry without it
+    if (error && error.message?.includes('store_name')) {
+      delete payload.store_name;
+      const retry = await supabase
+        .from('sellers')
+        .update(payload)
+        .or(`id.eq.${targetId},auth_user_id.eq.${targetId}`)
+        .select()
+        .maybeSingle();
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error) throw error;
-    return data as Seller;
+    return (data as Seller) || null;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     throw new Error(msg);

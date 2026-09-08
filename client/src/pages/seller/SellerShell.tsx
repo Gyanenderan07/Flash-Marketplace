@@ -32,6 +32,7 @@ import { supabase, BUYER_STOREFRONT_URL } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
+import { StoreProfileModal } from '@/components/seller/StoreProfileModal';
 
 const SPRING_TAB = { type: 'spring', stiffness: 380, damping: 30 } as const;
 const SPRING_PANEL = { type: 'spring', stiffness: 320, damping: 28 } as const;
@@ -169,7 +170,8 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
   const [bellOpen, setBellOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { theme, isDark, toggleTheme } = useTheme();
-  const { user, storeName, isVerified, signOut } = useAuth();
+  const { user, storeName, sellerProfile, isVerified, signOut } = useAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [location, navigate] = useLocation();
 
   // Keyboard dismiss (ESC)
@@ -562,26 +564,32 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
 
             {/* Merchant Identity & Sign Out Cluster */}
             <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
-              <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 px-3 py-1.5 rounded-full">
-                <div className="h-6 w-6 rounded-full bg-[#CCFF00] text-black font-extrabold text-[11px] grid place-items-center uppercase shrink-0">
-                  {(storeName || user?.email || 'M').charAt(0)}
-                </div>
-                <div className="flex items-center gap-1.5 max-w-[130px] sm:max-w-[170px] truncate">
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white truncate">
-                    {storeName || 'Merchant Portal'}
-                  </span>
-                  {isVerified ? (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase text-[#15803D] dark:text-[#CCFF00] bg-emerald-500/10 dark:bg-[#CCFF00]/10 px-1.5 py-0.5 rounded shrink-0">
-                      <CheckCircle2 size={10} className="text-[#15803D] dark:text-[#CCFF00]" />
-                      Verified
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center text-[9px] font-bold text-neutral-400 bg-neutral-500/10 px-1.5 py-0.5 rounded shrink-0">
-                      Standard
-                    </span>
-                  )}
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="shrink-0 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-700/80 hover:border-[#CCFF00]/50 transition-all duration-200 group cursor-pointer shadow-sm active:scale-95"
+                title="Click to edit Store Profile & Business Details"
+              >
+                {/* Dynamic Store Initial Circle */}
+                <span className="h-6 w-6 rounded-full bg-[#CCFF00] text-black font-black text-xs flex items-center justify-center select-none shadow-[0_0_8px_rgba(204,255,0,0.4)]">
+                  {(sellerProfile?.store_name || sellerProfile?.business_name || storeName || "M").charAt(0).toUpperCase()}
+                </span>
+
+                {/* Store Display Name */}
+                <span className="text-xs font-bold text-white group-hover:text-[#CCFF00] transition-colors truncate max-w-[130px]">
+                  {sellerProfile?.store_name || sellerProfile?.business_name || storeName || "My Store"}
+                </span>
+
+                {/* Status Pill */}
+                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+                  {sellerProfile?.kyc_status === 'verified' || isVerified ? 'VERIFIED' : 'PENDING'}
+                </span>
+
+                {/* Subtle Edit Pencil Indicator */}
+                <svg className="w-3 h-3 text-neutral-500 group-hover:text-[#CCFF00] transition-colors ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
 
               {/* Sign Out Button in Header */}
               <button
@@ -602,6 +610,12 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
         </div>
       </div>
     </main>
+
+    {/* Store Profile & Business Identity Editor Modal */}
+    <StoreProfileModal
+      isOpen={isProfileModalOpen}
+      onClose={() => setIsProfileModalOpen(false)}
+    />
     </div>
   );
 }
