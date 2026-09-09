@@ -25,7 +25,6 @@ import { ConfirmModal } from '@/components/seller/ConfirmModal';
 import { BulkActionBar } from '@/components/seller/BulkActionBar';
 import { TieredPricingTable } from '@/components/seller/TieredPricingTable';
 import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
-import { smoothCenter } from '@/lib/utils';
 import { CategoryChipRow } from '@/components/shared/CategoryChipRow';
 import SellerShell from './SellerShell';
 
@@ -40,30 +39,30 @@ export type CatalogSortKey =
   | 'name_asc';
 
 export const CATALOG_SORT_OPTIONS: SortOption<CatalogSortKey>[] = [
-  { id: 'newest', label: 'Newest First' },
-  { id: 'oldest', label: 'Oldest First' },
-  { id: 'price_asc', label: 'Price: Low to High' },
+  { id: 'newest',     label: 'Newest First' },
+  { id: 'oldest',     label: 'Oldest First' },
+  { id: 'price_asc',  label: 'Price: Low to High' },
   { id: 'price_desc', label: 'Price: High to Low' },
-  { id: 'stock_asc', label: 'Stock: Low to High' },
+  { id: 'stock_asc',  label: 'Stock: Low to High' },
   { id: 'stock_desc', label: 'Stock: High to Low' },
-  { id: 'name_asc', label: 'Alphabetical (A-Z)' },
+  { id: 'name_asc',   label: 'Alphabetical (A-Z)' },
 ];
 
 const PAGE_SIZE = 20;
 const SPRING = { type: 'spring', stiffness: 300, damping: 25 } as const;
-const FADE = { duration: 0.2, ease: 'easeOut' } as const;
+const FADE   = { duration: 0.2, ease: 'easeOut' } as const;
 
 type ProductStatus = 'active' | 'draft' | 'suppressed';
 type DrawerTab = 'basic' | 'images' | 'pricing' | 'inventory' | 'shipping' | 'variants' | 'compliance';
 
 const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
-  { id: 'basic', label: 'Basic Info' },
-  { id: 'images', label: 'Images' },
-  { id: 'pricing', label: 'Pricing' },
-  { id: 'inventory', label: 'Inventory' },
-  { id: 'shipping', label: 'Shipping' },
-  { id: 'variants', label: 'Variants' },
-  { id: 'compliance', label: 'Compliance' },
+  { id: 'basic',      label: 'Basic Info'  },
+  { id: 'images',     label: 'Images'      },
+  { id: 'pricing',    label: 'Pricing'     },
+  { id: 'inventory',  label: 'Inventory'   },
+  { id: 'shipping',   label: 'Shipping'    },
+  { id: 'variants',   label: 'Variants'    },
+  { id: 'compliance', label: 'Compliance'  },
 ];
 
 function generateSKU() {
@@ -112,10 +111,11 @@ function FormInput({
         placeholder={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition ${isDark
+        className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none transition ${
+          isDark
             ? `border-[#1F2430] bg-[#12161F] text-white placeholder:text-neutral-600 focus:border-[#CCFF00] ${error ? 'border-red-500' : ''}`
             : `border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#CCFF00] ${error ? 'border-red-400' : ''}`
-          }`}
+        }`}
       />
       {error && <span className="mt-1 block text-[10px] text-red-400">{error}</span>}
     </div>
@@ -124,8 +124,8 @@ function FormInput({
 
 // ─── Status badge map ─────────────────────────────────────────────────────────
 function productStatusVariant(s: string) {
-  if (s === 'active') return 'success' as const;
-  if (s === 'draft') return 'warning' as const;
+  if (s === 'active')    return 'success' as const;
+  if (s === 'draft')     return 'warning' as const;
   if (s === 'suppressed') return 'danger' as const;
   return 'default' as const;
 }
@@ -139,24 +139,16 @@ export default function ListingsPage() {
   const effectiveSellerId = sellerId || user?.id || null;
 
   // ── Data ──
-  const [products, setProducts] = useState<ProductExtended[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [products,   setProducts]   = useState<ProductExtended[]>([]);
+  const [isLoading,  setIsLoading]  = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ── Filters ──
-  const [search, setSearch] = useState('');
+  const [search,     setSearch]     = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ProductStatus>('all');
-  const statusFilterRef = useRef<HTMLDivElement>(null);
-  const activeStatusFilterRef = useRef<HTMLButtonElement | null>(null);
-  const [catFilter, setCatFilter] = useState('All');
-  const [sortKey, setSortKey] = useState<CatalogSortKey>('newest');
-
-  useEffect(() => {
-    if (activeStatusFilterRef.current && statusFilterRef.current) {
-      smoothCenter(statusFilterRef.current, activeStatusFilterRef.current);
-    }
-  }, [statusFilter]);
+  const [catFilter,  setCatFilter]  = useState('All');
+  const [sortKey,    setSortKey]    = useState<CatalogSortKey>('newest');
 
   // ── Pagination ──
   const [page, setPage] = useState(1);
@@ -165,34 +157,26 @@ export default function ListingsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // ── Drawer ──
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerTab, setDrawerTab] = useState<DrawerTab>('basic');
-  const drawerTabsRef = useRef<HTMLDivElement>(null);
-  const activeDrawerRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (activeDrawerRef.current && drawerTabsRef.current) {
-      smoothCenter(drawerTabsRef.current, activeDrawerRef.current);
-    }
-  }, [drawerTab]);
-  const [editProduct, setEditProduct] = useState<ProductExtended | null>(null);
-  const [formData, setFormData] = useState<FormData>({ ...EMPTY_FORM, sku: generateSKU() });
-  const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [priceTiers, setPriceTiers] = useState<Array<{ min_qty: number; unit_price: number }>>([]);
-  const [variants, setVariants] = useState<Array<{ variant_name: string; sku: string; stock: number; price_override: number | null }>>([]);
+  const [drawerOpen,    setDrawerOpen]    = useState(false);
+  const [drawerTab,     setDrawerTab]     = useState<DrawerTab>('basic');
+  const [editProduct,   setEditProduct]   = useState<ProductExtended | null>(null);
+  const [formData,      setFormData]      = useState<FormData>({ ...EMPTY_FORM, sku: generateSKU() });
+  const [formErrors,    setFormErrors]    = useState<Partial<FormData>>({});
+  const [isSubmitting,  setIsSubmitting]  = useState(false);
+  const [priceTiers,    setPriceTiers]    = useState<Array<{ min_qty: number; unit_price: number }>>([]);
+  const [variants,      setVariants]      = useState<Array<{ variant_name: string; sku: string; stock: number; price_override: number | null }>>([]);
 
   // ── Delete confirm ──
   const [deleteTarget, setDeleteTarget] = useState<ProductExtended | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting,   setIsDeleting]   = useState(false);
 
   // ── Bulk price modal ──
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
-  const [bulkPrice, setBulkPrice] = useState('');
+  const [bulkPrice,     setBulkPrice]     = useState('');
 
   // ── CSV Upload ──
-  const [csvOpen, setCsvOpen] = useState(false);
-  const [csvLoading, setCsvLoading] = useState(false);
+  const [csvOpen,     setCsvOpen]     = useState(false);
+  const [csvLoading,  setCsvLoading]  = useState(false);
   const [csvProgress, setCsvProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -353,10 +337,10 @@ export default function ListingsPage() {
     if (!validate()) { setDrawerTab('basic'); return; }
     setIsSubmitting(true);
     try {
-      const price = parseFloat(formData.price);
-      const orig = formData.original_price ? parseFloat(formData.original_price) : price;
-      const stock = parseInt(formData.stock) || 0;
-      const img = formData.primary_image.trim() || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80';
+      const price  = parseFloat(formData.price);
+      const orig   = formData.original_price ? parseFloat(formData.original_price) : price;
+      const stock  = parseInt(formData.stock) || 0;
+      const img    = formData.primary_image.trim() || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80';
       const extraImgs = formData.hover_images
         ? formData.hover_images.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
         : [];
@@ -477,14 +461,14 @@ export default function ListingsPage() {
 
   // ── CSS helpers ──
   const C = {
-    card: isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
-    well: isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
-    input: isDark ? 'border-[#1F2430] bg-[#12161F] text-white placeholder:text-neutral-600 focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#CCFF00]',
-    label: isDark ? 'text-neutral-400' : 'text-gray-500',
-    th: isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
-    row: isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
-    text: isDark ? 'text-white' : 'text-gray-900',
-    muted: isDark ? 'text-neutral-500' : 'text-gray-400',
+    card:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:   isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
+    input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white placeholder:text-neutral-600 focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#CCFF00]',
+    label:  isDark ? 'text-neutral-400' : 'text-gray-500',
+    th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
+    row:    isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
+    text:   isDark ? 'text-white'  : 'text-gray-900',
+    muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
@@ -543,42 +527,21 @@ export default function ListingsPage() {
         </div>
 
         {/* Status filter */}
-        <LayoutGroup id="listings-status-rail">
-          <div
-            ref={statusFilterRef}
-            className="flex gap-1.5 overflow-x-auto no-scrollbar horizontal-scroll-rail py-0.5 touch-pan-x select-none scroll-smooth shrink-0 max-w-full"
-            style={{ WebkitOverflowScrolling: 'touch' }}
-          >
-            {(['all', 'active', 'draft', 'suppressed'] as const).map(s => {
-              const isStatusActive = statusFilter === s;
-              return (
-                <button
-                  key={s}
-                  ref={isStatusActive ? (el) => { activeStatusFilterRef.current = el; } : undefined}
-                  onClick={(e) => {
-                    setStatusFilter(s);
-                    setPage(1);
-                    smoothCenter(statusFilterRef.current, e.currentTarget);
-                  }}
-                  className={`relative shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${
-                    isStatusActive
-                      ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-                      : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
-                  }`}
-                >
-                  {isStatusActive && (
-                    <motion.div
-                      layoutId="listings-status-pill"
-                      className="absolute inset-0 rounded-full bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.35)]"
-                      transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative z-10">{s}</span>
-                </button>
-              );
-            })}
-          </div>
-        </LayoutGroup>
+        <div className="flex gap-1.5 flex-wrap">
+          {(['all', 'active', 'draft', 'suppressed'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => { setStatusFilter(s); setPage(1); }}
+              className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                statusFilter === s
+                  ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
+                  : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
 
         {/* Refresh */}
         <button
@@ -656,7 +619,7 @@ export default function ListingsPage() {
                 <tbody className={`divide-y ${isDark ? 'divide-[#1F2430]/60' : 'divide-gray-100'}`}>
                   {paged.map(p => {
                     const isChecked = selected.has(p.id);
-                    const lowStock = (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.low_stock_threshold || 5);
+                    const lowStock  = (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.low_stock_threshold || 5);
                     return (
                       <tr key={p.id} className={`transition text-xs ${C.row} ${isChecked ? isDark ? 'bg-[#CCFF00]/5' : 'bg-[#CCFF00]/5' : ''}`}>
                         <td className="px-4 py-3">
@@ -828,40 +791,21 @@ export default function ListingsPage() {
               </div>
 
               {/* Tab nav */}
-              <LayoutGroup id="listings-drawer-tabs">
-                <div
-                  ref={drawerTabsRef}
-                  className={`flex overflow-x-auto no-scrollbar horizontal-scroll-rail border-b ${C.divider} px-4 pt-3 gap-0.5 touch-pan-x select-none scroll-smooth`}
-                  style={{ WebkitOverflowScrolling: 'touch' }}
-                >
-                  {DRAWER_TABS.map(tab => {
-                    const isTabActive = drawerTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        ref={isTabActive ? (el) => { activeDrawerRef.current = el; } : undefined}
-                        onClick={(e) => {
-                          setDrawerTab(tab.id);
-                          smoothCenter(drawerTabsRef.current, e.currentTarget);
-                        }}
-                        className={`relative flex-shrink-0 rounded-t-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${isTabActive
-                            ? 'text-[#CCFF00] font-extrabold'
-                            : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
-                          }`}
-                      >
-                        {isTabActive && (
-                          <motion.div
-                            layoutId="listings-drawer-tab-pill"
-                            className="absolute inset-0 rounded-t-lg bg-[#CCFF00]/15 border-b-2 border-[#CCFF00] z-0"
-                            transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                          />
-                        )}
-                        <span className="relative z-10">{tab.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </LayoutGroup>
+              <div className={`flex overflow-x-auto scrollbar-none border-b ${C.divider} px-4 pt-3 gap-0.5`}>
+                {DRAWER_TABS.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setDrawerTab(tab.id)}
+                    className={`flex-shrink-0 rounded-t-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider transition ${
+                      drawerTab === tab.id
+                        ? 'border-b-2 border-[#CCFF00] text-[#CCFF00]'
+                        : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
               {/* Drawer body */}
               <div className="flex-1 overflow-y-auto scrollbar-thin px-5 py-5">
@@ -883,10 +827,11 @@ export default function ListingsPage() {
                         <div className="flex gap-2">
                           {(['active', 'draft', 'suppressed'] as const).map(s => (
                             <button key={s} type="button" onClick={() => setFormData(d => ({ ...d, status: s }))}
-                              className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${formData.status === s
+                              className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                                formData.status === s
                                   ? 'bg-[#CCFF00] text-black'
                                   : `border ${C.well} ${C.muted}`
-                                }`}>
+                              }`}>
                               {s}
                             </button>
                           ))}
@@ -933,10 +878,11 @@ export default function ListingsPage() {
                           placeholder="https://images.unsplash.com/photo-1...&#10;https://images.unsplash.com/photo-2..."
                           value={formData.hover_images}
                           onChange={e => setFormData(d => ({ ...d, hover_images: e.target.value }))}
-                          className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none resize-none transition font-mono ${isDark
+                          className={`w-full rounded-xl border px-4 py-2.5 text-xs outline-none resize-none transition font-mono ${
+                            isDark
                               ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600'
                               : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00] placeholder:text-gray-400'
-                            }`}
+                          }`}
                         />
                         <span className={`mt-1 block text-[10px] ${C.muted}`}>
                           These images are displayed when buyers hover or swipe through your product gallery on the storefront.
@@ -1077,11 +1023,11 @@ export default function ListingsPage() {
         selectedCount={selected.size}
         onClear={() => setSelected(new Set())}
         actions={[
-          { label: 'Activate', onClick: () => bulkActivate('active'), icon: <Eye size={11} /> },
+          { label: 'Activate',   onClick: () => bulkActivate('active'),     icon: <Eye size={11} /> },
           { label: 'Deactivate', onClick: () => bulkActivate('suppressed'), icon: <EyeOff size={11} /> },
-          { label: 'Price', onClick: () => setBulkPriceOpen(true), icon: <Filter size={11} /> },
-          { label: 'Export CSV', onClick: exportCSV, icon: <Download size={11} /> },
-          { label: 'Delete', onClick: bulkDelete, danger: true, icon: <Trash2 size={11} /> },
+          { label: 'Price',      onClick: () => setBulkPriceOpen(true),     icon: <Filter size={11} /> },
+          { label: 'Export CSV', onClick: exportCSV,                        icon: <Download size={11} /> },
+          { label: 'Delete',     onClick: bulkDelete,  danger: true,        icon: <Trash2 size={11} /> },
         ]}
       />
 
@@ -1179,7 +1125,7 @@ export default function ListingsPage() {
                 </div>
               )}
               <div className={`mt-4 rounded-xl border p-3 text-[10px] leading-relaxed ${C.well} ${C.muted}`}>
-                <strong className={C.text}>Required columns:</strong> name, price, category, stock<br />
+                <strong className={C.text}>Required columns:</strong> name, price, category, stock<br/>
                 <strong className={C.text}>Optional:</strong> brand, sku, description, original_price, primary_image
               </div>
             </motion.div>

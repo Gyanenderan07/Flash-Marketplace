@@ -63,12 +63,10 @@ export default function SignupPage() {
     setErrorMsg(null);
 
     try {
-      const { error } = await signUp(
-        cleanBusiness,
-        storeName.trim() || cleanBusiness,
-        cleanEmail,
-        password
-      );
+      const { error } = await signUp(cleanEmail, password, {
+        business_name: cleanBusiness,
+        store_name: storeName.trim() || cleanBusiness
+      });
 
       if (error) {
         const msg = error.message || 'Failed to create merchant account.';

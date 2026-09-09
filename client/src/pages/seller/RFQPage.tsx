@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/seller/EmptyState';
 import SellerShell from './SellerShell';
 
 const SPRING = { type: 'spring', stiffness: 300, damping: 25 } as const;
-const FADE = { duration: 0.2, ease: 'easeOut' } as const;
+const FADE   = { duration: 0.2, ease: 'easeOut' } as const;
 
 type QuoteStatusFilter = 'all' | 'requested' | 'responded' | 'negotiating' | 'accepted' | 'declined';
 
@@ -20,15 +20,15 @@ function formatDate(s: string) {
 
 export default function RFQPage() {
   const { isDark } = useTheme();
-  const [quotes, setQuotes] = useState<QuoteType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [quotes,      setQuotes]      = useState<QuoteType[]>([]);
+  const [isLoading,   setIsLoading]   = useState(true);
+  const [error,       setError]       = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>('all');
-  const [selected, setSelected] = useState<QuoteType | null>(null);
-  const [replyPrice, setReplyPrice] = useState('');
-  const [replyLead, setReplyLead] = useState('');
-  const [replyMsg, setReplyMsg] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [selected,    setSelected]    = useState<QuoteType | null>(null);
+  const [replyPrice,  setReplyPrice]  = useState('');
+  const [replyLead,   setReplyLead]   = useState('');
+  const [replyMsg,    setReplyMsg]    = useState('');
+  const [isSending,   setIsSending]   = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true); setError(null);
@@ -48,7 +48,7 @@ export default function RFQPage() {
 
   const filtered = useMemo(() =>
     statusFilter === 'all' ? quotes : quotes.filter(q => q.status === statusFilter)
-    , [quotes, statusFilter]);
+  , [quotes, statusFilter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: quotes.length };
@@ -91,11 +91,11 @@ export default function RFQPage() {
   };
 
   const C = {
-    card: isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
-    well: isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
-    text: isDark ? 'text-white' : 'text-gray-900',
-    muted: isDark ? 'text-neutral-500' : 'text-gray-400',
-    input: isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
+    card:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:   isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
+    text:   isDark ? 'text-white'  : 'text-gray-900',
+    muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
+    input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
@@ -109,12 +109,13 @@ export default function RFQPage() {
 
       {/* Status tabs */}
       <div className={`mb-4 flex flex-wrap gap-1.5`}>
-        {(['all', 'requested', 'responded', 'negotiating', 'accepted', 'declined'] as QuoteStatusFilter[]).map(s => (
+        {(['all','requested','responded','negotiating','accepted','declined'] as QuoteStatusFilter[]).map(s => (
           <button key={s} onClick={() => setStatusFilter(s)}
-            className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${statusFilter === s
+            className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+              statusFilter === s
                 ? 'bg-[#CCFF00] text-black'
                 : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
-              }`}>
+            }`}>
             {s}{counts[s] ? ` (${counts[s]})` : ''}
           </button>
         ))}
@@ -217,10 +218,11 @@ export default function RFQPage() {
                 )}
                 {((selected.thread || (selected as unknown as { history?: QuoteThreadMessage[] }).history || [])).map((msg, i) => (
                   <div key={i} className={`flex ${msg.sender === 'seller' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${msg.sender === 'seller'
+                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                      msg.sender === 'seller'
                         ? 'bg-black text-[#CCFF00] rounded-br-sm'
                         : isDark ? 'bg-[#12161F] text-white rounded-bl-sm border border-[#1F2430]' : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                      }`}>
+                    }`}>
                       {msg.message}
                       <div className={`mt-1 text-[9px] ${msg.sender === 'seller' ? 'text-[#CCFF00]/60' : C.muted}`}>
                         {new Date(msg.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}

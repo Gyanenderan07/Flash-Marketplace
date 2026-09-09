@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, CartesianGrid, Cell, PieChart, Pie,
   ResponsiveContainer, Tooltip, XAxis, YAxis, Legend
 } from 'recharts';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
   AlertTriangle,
@@ -25,7 +25,6 @@ import { supabase, getExtendedOrders, getExtendedCatalog, type OrderExtended, ty
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { SkeletonCard } from '@/components/seller/SkeletonTable';
-import { smoothCenter } from '@/lib/utils';
 import { EmptyState } from '@/components/seller/EmptyState';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import SellerShell from './SellerShell';
@@ -86,27 +85,11 @@ export default function AnalyticsPage() {
   const { isDark } = useTheme();
   const { sellerId, user } = useAuth();
   const effectiveSellerId = sellerId || user?.id || null;
-  const [orders, setOrders] = useState<OrderExtended[]>([]);
-  const [products, setProducts] = useState<ProductExtended[]>([]);
+  const [orders,    setOrders]    = useState<OrderExtended[]>([]);
+  const [products,  setProducts]  = useState<ProductExtended[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [range, setRange] = useState<DateRange>('30');
-  const rangeRailRef = useRef<HTMLDivElement>(null);
-  const activeRangeRef = useRef<HTMLButtonElement | null>(null);
+  const [range,     setRange]     = useState<DateRange>('30');
   const [chartMode, setChartMode] = useState<ChartMode>('revenue');
-  const chartModesRef = useRef<HTMLDivElement>(null);
-  const activeModeRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (activeRangeRef.current && rangeRailRef.current) {
-      smoothCenter(rangeRailRef.current, activeRangeRef.current);
-    }
-  }, [range]);
-
-  useEffect(() => {
-    if (activeModeRef.current && chartModesRef.current) {
-      smoothCenter(chartModesRef.current, activeModeRef.current);
-    }
-  }, [chartMode]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ── Load live data from shared Supabase instance scoped to seller ──
@@ -268,16 +251,16 @@ export default function AnalyticsPage() {
 
   // ── Design Tokens ──
   const C = useMemo(() => ({
-    card: isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
-    well: isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
-    text: isDark ? 'text-white' : 'text-neutral-900',
-    muted: isDark ? 'text-neutral-400' : 'text-neutral-500',
+    card:    isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well:    isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
+    text:    isDark ? 'text-white' : 'text-neutral-900',
+    muted:   isDark ? 'text-neutral-400' : 'text-neutral-500',
     divider: isDark ? 'border-[#1F2430]' : 'border-neutral-200',
   }), [isDark]);
 
   const primaryAccent = useMemo(() => isDark ? '#CCFF00' : '#15803D', [isDark]);
-  const gridStroke = useMemo(() => isDark ? '#1F2430' : '#E5E7EB', [isDark]);
-  const axisText = useMemo(() => isDark ? '#9CA3AF' : '#6B7280', [isDark]);
+  const gridStroke    = useMemo(() => isDark ? '#1F2430' : '#E5E7EB', [isDark]);
+  const axisText      = useMemo(() => isDark ? '#9CA3AF' : '#6B7280', [isDark]);
 
   const tooltipStyle = useMemo(() => ({
     backgroundColor: isDark ? '#0D1117' : '#FFFFFF',
@@ -289,10 +272,10 @@ export default function AnalyticsPage() {
   }), [isDark]);
 
   const CHART_MODES = [
-    { id: 'revenue', label: '📈 Revenue Trend', desc: 'Area Trendline' },
-    { id: 'comparison', label: '📊 Category Comparison', desc: 'Units vs Sales' },
-    { id: 'inventory_share', label: '🍩 Inventory Share', desc: 'Stock Donut Ring' },
-    { id: 'depletion_radar', label: '⚠️ Restock Radar', desc: `${depletionItems.length} Low Stock` },
+    { id: 'revenue',         label: '📈 Revenue Trend',       desc: 'Area Trendline' },
+    { id: 'comparison',      label: '📊 Category Comparison', desc: 'Units vs Sales' },
+    { id: 'inventory_share', label: '🍩 Inventory Share',     desc: 'Stock Donut Ring' },
+    { id: 'depletion_radar', label: '⚠️ Restock Radar',       desc: `${depletionItems.length} Low Stock` },
   ] as const;
 
   return (
@@ -320,41 +303,21 @@ export default function AnalyticsPage() {
 
           <div className="flex items-center gap-2 flex-wrap">
             {/* Interactive Date Range Switcher */}
-            <LayoutGroup id="analytics-date-range">
-              <div
-                ref={rangeRailRef}
-                className={`flex items-center rounded-full border p-1 overflow-x-auto no-scrollbar horizontal-scroll-rail touch-pan-x select-none scroll-smooth ${C.well}`}
-                style={{ WebkitOverflowScrolling: 'touch' }}
-              >
-                {(['7', '30', '90', 'all'] as DateRange[]).map(r => {
-                  const isRangeActive = range === r;
-                  return (
-                    <button
-                      key={r}
-                      ref={isRangeActive ? (el) => { activeRangeRef.current = el; } : undefined}
-                      onClick={(e) => {
-                        setRange(r);
-                        smoothCenter(rangeRailRef.current, e.currentTarget);
-                      }}
-                      className={`relative shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${
-                        isRangeActive
-                          ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.35)]'
-                          : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
-                      }`}
-                    >
-                      {isRangeActive && (
-                        <motion.div
-                          layoutId="analytics-range-pill"
-                          className="absolute inset-0 rounded-full bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.35)]"
-                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                        />
-                      )}
-                      <span className="relative z-10">{r === 'all' ? 'All-Time' : `${r}D`}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </LayoutGroup>
+            <div className={`flex items-center rounded-full border p-1 ${C.well}`}>
+              {(['7', '30', '90', 'all'] as DateRange[]).map(r => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                    range === r
+                      ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.35)] font-extrabold'
+                      : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
+                  }`}
+                >
+                  {r === 'all' ? 'All-Time' : `${r}D`}
+                </button>
+              ))}
+            </div>
 
             {/* Refresh Button */}
             <motion.button
@@ -375,8 +338,9 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('revenue')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${chartMode === 'revenue' ? 'ring-2 ring-[#CCFF00]' : ''
-              }`}
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
+              chartMode === 'revenue' ? 'ring-2 ring-[#CCFF00]' : ''
+            }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-[#CCFF00]">
@@ -400,8 +364,9 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('comparison')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${chartMode === 'comparison' ? 'ring-2 ring-[#CCFF00]' : ''
-              }`}
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
+              chartMode === 'comparison' ? 'ring-2 ring-[#CCFF00]' : ''
+            }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-sky-400">
@@ -427,8 +392,9 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('inventory_share')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${chartMode === 'inventory_share' ? 'ring-2 ring-[#CCFF00]' : ''
-              }`}
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
+              chartMode === 'inventory_share' ? 'ring-2 ring-[#CCFF00]' : ''
+            }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-violet-600 dark:text-purple-400">
@@ -452,8 +418,9 @@ export default function AnalyticsPage() {
           <motion.div
             whileHover={{ y: -2 }}
             onClick={() => setChartMode('depletion_radar')}
-            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${chartMode === 'depletion_radar' ? 'ring-2 ring-amber-400' : ''
-              }`}
+            className={`cursor-pointer relative overflow-hidden rounded-2xl border p-5 transition-[background-color,border-color,box-shadow] duration-200 ${C.card} ${
+              chartMode === 'depletion_radar' ? 'ring-2 ring-amber-400' : ''
+            }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
@@ -464,8 +431,9 @@ export default function AnalyticsPage() {
               </span>
             </div>
             <div className="mt-3">
-              <div className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${depletionItems.length > 0 ? 'text-amber-600 dark:text-amber-400' : C.text
-                }`}>
+              <div className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight tabular-nums ${
+                depletionItems.length > 0 ? 'text-amber-600 dark:text-amber-400' : C.text
+              }`}>
                 {depletionItems.length}
               </div>
               <p className={`mt-1 text-[11px] ${C.muted}`}>
@@ -479,45 +447,27 @@ export default function AnalyticsPage() {
 
         {/* ── INTERACTIVE CHART MODE SWITCHER ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-          <LayoutGroup id="analytics-chart-modes">
-            <div
-              ref={chartModesRef}
-              className="flex items-center gap-1.5 overflow-x-auto no-scrollbar horizontal-scroll-rail p-1.5 rounded-2xl bg-neutral-200/80 dark:bg-[#14171F] touch-pan-x select-none scroll-smooth"
-              style={{ WebkitOverflowScrolling: 'touch' }}
-            >
-              {CHART_MODES.map(mode => {
-                const isSelected = chartMode === mode.id;
-                return (
-                  <button
-                    key={mode.id}
-                    ref={isSelected ? (el) => { activeModeRef.current = el; } : undefined}
-                    onClick={(e) => {
-                      setChartMode(mode.id);
-                      smoothCenter(chartModesRef.current, e.currentTarget);
-                    }}
-                    className={`shrink-0 relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${isSelected
-                        ? 'text-neutral-900 dark:text-white font-extrabold'
-                        : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                      }`}
-                  >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="analytics-chart-pill"
-                        className="absolute inset-0 rounded-xl bg-white dark:bg-neutral-800 shadow-md z-0"
-                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center gap-2">
-                      <span>{mode.label}</span>
-                      {isSelected && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#15803D] dark:bg-[#CCFF00]" />
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </LayoutGroup>
+          <div className="flex items-center gap-1.5 overflow-x-auto horizontal-scroll-rail p-1.5 rounded-2xl bg-neutral-200/80 dark:bg-[#14171F]">
+            {CHART_MODES.map(mode => {
+              const isSelected = chartMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => setChartMode(mode.id)}
+                  className={`shrink-0 relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-md font-extrabold'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>{mode.label}</span>
+                  {isSelected && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#15803D] dark:bg-[#CCFF00]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
           <div className={`text-xs font-semibold ${C.muted} hidden md:block`}>
             Showing: <strong className={C.text}>{CHART_MODES.find(m => m.id === chartMode)?.label}</strong>
@@ -832,8 +782,9 @@ export default function AnalyticsPage() {
                     return (
                       <div
                         key={item.id}
-                        className={`flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border p-4 transition-all ${C.well} ${isZero ? 'border-red-400/40 bg-red-50/40 dark:bg-red-950/20' : ''
-                          }`}
+                        className={`flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border p-4 transition-all ${C.well} ${
+                          isZero ? 'border-red-400/40 bg-red-50/40 dark:bg-red-950/20' : ''
+                        }`}
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -862,8 +813,9 @@ export default function AnalyticsPage() {
                           </div>
                           <div className="h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-300 ${isZero ? 'bg-red-500' : 'bg-amber-400'
-                                }`}
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                isZero ? 'bg-red-500' : 'bg-amber-400'
+                              }`}
                               style={{ width: `${Math.max(5, pct)}%` }}
                             />
                           </div>

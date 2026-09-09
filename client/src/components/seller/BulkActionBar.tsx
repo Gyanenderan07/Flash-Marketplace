@@ -25,7 +25,7 @@ export function BulkActionBar({ selectedCount, actions, onClear }: BulkActionBar
       {selectedCount > 0 && (
         <motion.div
           initial={{ y: 80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          animate={{ y: 0,  opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 360, damping: 30 }}
           className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 max-w-[calc(100vw-2rem)] w-auto"
@@ -46,10 +46,11 @@ export function BulkActionBar({ selectedCount, actions, onClear }: BulkActionBar
                 whileHover={{ y: -0.5 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={action.onClick}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${action.danger
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
+                  action.danger
                     ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                     : 'bg-[#12161F] text-white hover:bg-[#1F2430]'
-                  }`}
+                }`}
               >
                 {action.icon}
                 {action.label}
