@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ScrollableTabRow } from '@/components/shared/ScrollableTabRow';
 import { CategoryChipRow } from '@/components/shared/CategoryChipRow';
 import {
@@ -854,7 +854,6 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
           tabs={TABS}
           activeTab={activeTab}
           onTabChange={(id) => switchTab(id as TabId)}
-          layoutGroupId="dashboard-nav-tabs"
           rightAction={
             <button
               onClick={openAddDrawer}
@@ -919,7 +918,6 @@ export default function SellerDashboard({ initialTab }: { initialTab?: TabId } =
                       setSelectedCategory(cat);
                       setCatalogPage(1);
                     }}
-                    layoutGroupId="dashboard-category-rail"
                   />
                 </div>
               </div>

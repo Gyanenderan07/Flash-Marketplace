@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, ChevronLeft, ChevronRight, Copy, Download, Edit3,
   ExternalLink, Filter, Layers, Loader2, Package, Plus, RefreshCw,
@@ -560,7 +560,6 @@ export default function ListingsPage() {
           setCatFilter(cat);
           setPage(1);
         }}
-        layoutGroupId="listings-category-rail"
         className="mb-5"
       />
 
