@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, LayoutGroup } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
+import { smoothCenter } from '@/lib/utils';
 
 export interface TabItem {
   id: string;
@@ -22,10 +23,12 @@ interface ScrollableTabRowProps {
 /**
  * ScrollableTabRow
  * Responsive, zoom-resilient tab navigation rail with:
- * - Fluid horizontal scrolling on overflow
+ * - Fluid horizontal scrolling on overflow with hidden scrollbars
+ * - 120fps Floating Spring Pill Indicator (layoutId)
+ * - Smooth Momentum Auto-Centering
  * - Wheel delta translation for non-touch mice
  * - shrink-0 text protection
- * - Separate rightAction CTA with ml-auto/wrap
+ * - Standalone rightAction CTA
  */
 export function ScrollableTabRow({
   tabs,
@@ -36,6 +39,14 @@ export function ScrollableTabRow({
   layoutGroupId = 'shared-nav-tabs',
 }: ScrollableTabRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement | null>(null);
+
+  // Auto-center active tab on mount or change
+  useEffect(() => {
+    if (activeRef.current && scrollRef.current) {
+      smoothCenter(scrollRef.current, activeRef.current);
+    }
+  }, [activeTab]);
 
   // Translate vertical wheel to horizontal scroll on non-touch mice
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -53,7 +64,7 @@ export function ScrollableTabRow({
         <div
           ref={scrollRef}
           onWheel={handleWheel}
-          className="flex-1 min-w-0 flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-100 dark:bg-[#0D1117] border border-neutral-200 dark:border-neutral-800/80 shadow-inner overflow-x-auto horizontal-scroll-rail scroll-smooth touch-pan-x select-none"
+          className="flex-1 min-w-0 flex items-center gap-1.5 p-1.5 rounded-2xl bg-neutral-100 dark:bg-[#0D1117] border border-neutral-200 dark:border-neutral-800/80 shadow-inner overflow-x-auto no-scrollbar horizontal-scroll-rail scroll-smooth touch-pan-x select-none"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {tabs.map((tab) => {
@@ -62,20 +73,20 @@ export function ScrollableTabRow({
             return (
               <button
                 key={tab.id}
+                ref={isActive ? (el) => { activeRef.current = el; } : undefined}
                 onClick={(e) => {
                   onTabChange(tab.id);
-                  e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                  smoothCenter(scrollRef.current, e.currentTarget);
                 }}
-                className={`relative shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-[background-color,color,border-color,box-shadow] duration-200 ${
-                  isActive
-                    ? "bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.3)] font-extrabold"
+                className={`relative shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-[color] duration-200 cursor-pointer ${isActive
+                    ? "text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.3)]"
                     : "text-neutral-700 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/70 dark:hover:bg-neutral-900/60"
-                }`}
+                  }`}
               >
                 {isActive && (
                   <motion.div
-                    layoutId="activeTabGlow"
-                    className="absolute inset-0 rounded-xl bg-[#CCFF00] -z-0"
+                    layoutId={`${layoutGroupId}-active-pill`}
+                    className="absolute inset-0 rounded-xl bg-[#CCFF00] z-0 shadow-[0_0_14px_rgba(204,255,0,0.35)]"
                     transition={{ type: "spring", stiffness: 450, damping: 32 }}
                   />
                 )}

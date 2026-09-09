@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, LayoutGroup } from 'framer-motion';
 import { AlertCircle, Download, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -9,6 +9,7 @@ import {
 import { useTheme } from '@/contexts/ThemeContext';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { SkeletonTable } from '@/components/seller/SkeletonTable';
+import { smoothCenter } from '@/lib/utils';
 import { EmptyState } from '@/components/seller/EmptyState';
 import SellerShell from './SellerShell';
 
@@ -24,7 +25,7 @@ function formatDate(s: string) {
 
 function payoutVariant(status: string) {
   if (status === 'paid' || status === 'completed') return 'success' as const;
-  if (status === 'failed') return 'danger'  as const;
+  if (status === 'failed') return 'danger' as const;
   return 'warning' as const;
 }
 
@@ -34,13 +35,29 @@ function ledgerSign(type: string) {
 
 export default function PayoutsPage() {
   const { isDark } = useTheme();
-  const [payouts,      setPayouts]      = useState<Payout[]>([]);
-  const [ledger,       setLedger]       = useState<LedgerEntry[]>([]);
-  const [orders,       setOrders]       = useState<OrderExtended[]>([]);
-  const [isLoading,    setIsLoading]    = useState(true);
-  const [error,        setError]        = useState<string | null>(null);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
+  const [orders, setOrders] = useState<OrderExtended[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
-  const [activeTab,    setActiveTab]    = useState<'payouts' | 'ledger'>('ledger');
+  const [activeTab, setActiveTab] = useState<'payouts' | 'ledger'>('ledger');
+  const primaryTabsRef = useRef<HTMLDivElement>(null);
+  const activePrimaryRef = useRef<HTMLButtonElement | null>(null);
+  const ledgerFilterRef = useRef<HTMLDivElement>(null);
+  const activeLedgerRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (activePrimaryRef.current && primaryTabsRef.current) {
+      smoothCenter(primaryTabsRef.current, activePrimaryRef.current);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeLedgerRef.current && ledgerFilterRef.current) {
+      smoothCenter(ledgerFilterRef.current, activeLedgerRef.current);
+    }
+  }, [ledgerFilter]);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -71,7 +88,7 @@ export default function PayoutsPage() {
 
   const filteredLedger = useMemo(() =>
     ledgerFilter === 'all' ? ledger : ledger.filter(e => e.type === ledgerFilter)
-  , [ledger, ledgerFilter]);
+    , [ledger, ledgerFilter]);
 
   const totals = useMemo(() => {
     const rawSales = ledger.filter(e => e.type === 'sale').reduce((a, e) => a + e.amount, 0);
@@ -106,11 +123,11 @@ export default function PayoutsPage() {
   };
 
   const C = {
-    card:    isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
-    well:    isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
-    text:    isDark ? 'text-white'  : 'text-gray-900',
-    muted:   isDark ? 'text-neutral-500' : 'text-gray-400',
-    th:      isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
+    card: isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well: isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
+    text: isDark ? 'text-white' : 'text-gray-900',
+    muted: isDark ? 'text-neutral-500' : 'text-gray-400',
+    th: isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
@@ -201,22 +218,43 @@ export default function PayoutsPage() {
       </div>
 
       {/* Tabs */}
-      <div className={`mb-4 flex overflow-x-auto horizontal-scroll-rail gap-1.5 border-b pb-3 ${C.divider}`}>
-        {[
-          { id: 'ledger',  label: 'Transaction Ledger' },
-          { id: 'payouts', label: 'Payout History' },
-        ].map(tab => (
-          <button key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'ledger' | 'payouts')}
-            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
-              activeTab === tab.id
-                ? 'bg-[#CCFF00] text-black'
-                : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
-            }`}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <LayoutGroup id="payouts-main-tabs">
+        <div
+          ref={primaryTabsRef}
+          className="mb-6 flex overflow-x-auto no-scrollbar horizontal-scroll-rail pb-2 gap-2 touch-pan-x select-none scroll-smooth"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {[
+            { id: 'ledger', label: 'Transaction Ledger' },
+            { id: 'payouts', label: 'Payout History' },
+          ].map(tab => {
+            const isTabActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={isTabActive ? (el) => { activePrimaryRef.current = el; } : undefined}
+                onClick={(e) => {
+                  setActiveTab(tab.id as 'ledger' | 'payouts');
+                  smoothCenter(primaryTabsRef.current, e.currentTarget);
+                }}
+                className={`relative shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${isTabActive
+                    ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.3)]'
+                    : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
+                  }`}
+              >
+                {isTabActive && (
+                  <motion.div
+                    layoutId="payouts-main-pill"
+                    className="absolute inset-0 rounded-full bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.35)]"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </LayoutGroup>
 
       {error ? (
         <div className={`flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-2xl border p-12 ${C.card}`}>
@@ -228,16 +266,40 @@ export default function PayoutsPage() {
       ) : activeTab === 'ledger' ? (
         <>
           {/* Ledger type filter */}
-          <div className="mb-4 flex overflow-x-auto horizontal-scroll-rail pb-1 gap-1.5">
-            {(['all', 'sale', 'fee', 'refund', 'tax'] as LedgerFilter[]).map(f => (
-              <button key={f} onClick={() => setLedgerFilter(f)}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
-                  ledgerFilter === f ? 'bg-[#CCFF00] text-black' : `border ${C.well} ${C.muted}`
-                }`}>
-                {f}
-              </button>
-            ))}
-          </div>
+          <LayoutGroup id="payouts-ledger-filter">
+            <div
+              ref={ledgerFilterRef}
+              className="mb-4 flex overflow-x-auto no-scrollbar horizontal-scroll-rail pb-1 gap-1.5 touch-pan-x select-none scroll-smooth"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {(['all', 'sale', 'fee', 'refund', 'tax'] as LedgerFilter[]).map(f => {
+                const isFilterActive = ledgerFilter === f;
+                return (
+                  <button
+                    key={f}
+                    ref={isFilterActive ? (el) => { activeLedgerRef.current = el; } : undefined}
+                    onClick={(e) => {
+                      setLedgerFilter(f);
+                      smoothCenter(ledgerFilterRef.current, e.currentTarget);
+                    }}
+                    className={`relative shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${isFilterActive
+                        ? 'text-black font-extrabold shadow-[0_0_10px_rgba(204,255,0,0.3)]'
+                        : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
+                      }`}
+                  >
+                    {isFilterActive && (
+                      <motion.div
+                        layoutId="payouts-ledger-pill"
+                        className="absolute inset-0 rounded-full bg-[#CCFF00] z-0 shadow-[0_0_10px_rgba(204,255,0,0.35)]"
+                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                      />
+                    )}
+                    <span className="relative z-10">{f}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </LayoutGroup>
 
           {filteredLedger.length === 0 ? (
             <EmptyState icon={Wallet} title="No transactions" body="Ledger entries will appear as orders are placed and processed." />

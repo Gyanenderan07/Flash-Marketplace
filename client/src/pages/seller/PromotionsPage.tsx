@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { AlertCircle, Layers, Loader2, PercentSquare, Plus, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/seller/EmptyState';
 import { ConfirmModal } from '@/components/seller/ConfirmModal';
 import { TieredPricingTable } from '@/components/seller/TieredPricingTable';
 import SellerShell from './SellerShell';
+import { smoothCenter } from '@/lib/utils';
 
 const SPRING = { type: 'spring', stiffness: 300, damping: 25 } as const;
 
@@ -29,21 +30,29 @@ export default function PromotionsPage() {
   const { isDark } = useTheme();
   const { sellerId, user } = useAuth();
   const effectiveSellerId = sellerId || user?.id || null;
-  const [subTab,       setSubTab]       = useState<PromoSubTab>('coupons');
-  const [promos,       setPromos]       = useState<Promotion[]>([]);
-  const [products,     setProducts]     = useState<ProductExtended[]>([]);
-  const [isLoading,    setIsLoading]    = useState(true);
-  const [error,        setError]        = useState<string | null>(null);
-  const [formOpen,     setFormOpen]     = useState(false);
+  const [subTab, setSubTab] = useState<PromoSubTab>('coupons');
+  const promosTabRef = useRef<HTMLDivElement>(null);
+  const activeSubTabRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (activeSubTabRef.current && promosTabRef.current) {
+      smoothCenter(promosTabRef.current, activeSubTabRef.current);
+    }
+  }, [subTab]);
+  const [promos, setPromos] = useState<Promotion[]>([]);
+  const [products, setProducts] = useState<ProductExtended[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Promotion | null>(null);
-  const [saving,       setSaving]       = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Promo coupon fields
-  const [code,     setCode]     = useState('');
-  const [type,     setType]     = useState<'percentage' | 'flat'>('percentage');
-  const [value,    setValue]    = useState('');
+  const [code, setCode] = useState('');
+  const [type, setType] = useState<'percentage' | 'flat'>('percentage');
+  const [value, setValue] = useState('');
   const [minSpend, setMinSpend] = useState('');
-  const [expiry,   setExpiry]   = useState('');
+  const [expiry, setExpiry] = useState('');
 
   // Volume rule builder fields
   const [selectedProductId, setSelectedProductId] = useState<string>('all');
@@ -150,11 +159,11 @@ export default function PromotionsPage() {
   };
 
   const C = {
-    card:    isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
-    well:    isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
-    text:    isDark ? 'text-white'  : 'text-gray-900',
-    muted:   isDark ? 'text-neutral-500' : 'text-gray-400',
-    input:   isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
+    card: isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well: isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
+    text: isDark ? 'text-white' : 'text-gray-900',
+    muted: isDark ? 'text-neutral-500' : 'text-gray-400',
+    input: isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
@@ -179,28 +188,58 @@ export default function PromotionsPage() {
       </div>
 
       {/* Sub-nav Tabs */}
-      <div className="mb-6 flex items-center overflow-x-auto horizontal-scroll-rail gap-2 border-b border-neutral-200 dark:border-[#1F2430] pb-2">
-        <button
-          onClick={() => setSubTab('coupons')}
-          className={`shrink-0 whitespace-nowrap flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
-            subTab === 'coupons'
-              ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-              : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
-          }`}
+      <LayoutGroup id="promotions-subtabs">
+        <div
+          ref={promosTabRef}
+          className="mb-6 flex items-center overflow-x-auto no-scrollbar horizontal-scroll-rail gap-2 border-b border-neutral-200 dark:border-[#1F2430] pb-2 touch-pan-x select-none scroll-smooth"
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          <PercentSquare size={13} /> Promo Codes ({promos.length})
-        </button>
-        <button
-          onClick={() => setSubTab('volume_tiers')}
-          className={`shrink-0 whitespace-nowrap flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
-            subTab === 'volume_tiers'
-              ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-              : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
-          }`}
-        >
-          <Layers size={13} /> Volume Discount Rule Builder
-        </button>
-      </div>
+          <button
+            ref={subTab === 'coupons' ? (el) => { activeSubTabRef.current = el; } : undefined}
+            onClick={(e) => {
+              setSubTab('coupons');
+              smoothCenter(promosTabRef.current, e.currentTarget);
+            }}
+            className={`relative shrink-0 whitespace-nowrap flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition cursor-pointer ${subTab === 'coupons'
+                ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.25)]'
+                : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
+              }`}
+          >
+            {subTab === 'coupons' && (
+              <motion.div
+                layoutId="promotions-subtab-pill"
+                className="absolute inset-0 rounded-xl bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.3)]"
+                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <PercentSquare size={13} /> Promo Codes ({promos.length})
+            </span>
+          </button>
+          <button
+            ref={subTab === 'volume_tiers' ? (el) => { activeSubTabRef.current = el; } : undefined}
+            onClick={(e) => {
+              setSubTab('volume_tiers');
+              smoothCenter(promosTabRef.current, e.currentTarget);
+            }}
+            className={`relative shrink-0 whitespace-nowrap flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wider transition cursor-pointer ${subTab === 'volume_tiers'
+                ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.25)]'
+                : `${C.muted} hover:text-neutral-900 dark:hover:text-white`
+              }`}
+          >
+            {subTab === 'volume_tiers' && (
+              <motion.div
+                layoutId="promotions-subtab-pill"
+                className="absolute inset-0 rounded-xl bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.3)]"
+                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Layers size={13} /> Volume Discount Rule Builder
+            </span>
+          </button>
+        </div>
+      </LayoutGroup>
 
       {subTab === 'coupons' ? (
         <>
@@ -221,9 +260,8 @@ export default function PromotionsPage() {
                   <div className="flex gap-2">
                     {(['percentage', 'flat'] as const).map(t => (
                       <button key={t} type="button" onClick={() => setType(t)}
-                        className={`flex-1 rounded-full py-2.5 text-[10px] font-black uppercase tracking-wider transition ${
-                          type === t ? 'bg-[#CCFF00] text-black' : `border ${C.well} ${C.muted}`
-                        }`}>
+                        className={`flex-1 rounded-full py-2.5 text-[10px] font-black uppercase tracking-wider transition ${type === t ? 'bg-[#CCFF00] text-black' : `border ${C.well} ${C.muted}`
+                          }`}>
                         {t === 'percentage' ? '% Off' : '₹ Flat'}
                       </button>
                     ))}

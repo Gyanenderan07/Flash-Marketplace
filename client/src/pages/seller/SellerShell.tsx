@@ -46,17 +46,17 @@ export interface NavItem {
 }
 
 export const SELLER_NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard',   icon: LayoutDashboard, href: '/seller/dashboard'  },
-  { label: 'Listings',    icon: Package,         href: '/seller/listings'   },
-  { label: 'Inventory',   icon: Layers,          href: '/seller/inventory'  },
-  { label: 'Orders',      icon: ClipboardList,   href: '/seller/orders'     },
-  { label: 'RFQ / Quotes', icon: ClipboardList,  href: '/seller/rfq'        },
-  { label: 'Promotions',  icon: PercentSquare,   href: '/seller/promotions' },
-  { label: 'Returns',     icon: RotateCcw,       href: '/seller/returns'    },
-  { label: 'Payouts',     icon: Wallet,          href: '/seller/payouts'    },
-  { label: 'Health',      icon: Shield,          href: '/seller/health'     },
-  { label: 'Analytics',   icon: BarChart3,       href: '/seller/analytics'  },
-  { label: 'Settings',    icon: Settings2,       href: '/seller/settings'   },
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/seller/dashboard' },
+  { label: 'Listings', icon: Package, href: '/seller/listings' },
+  { label: 'Inventory', icon: Layers, href: '/seller/inventory' },
+  { label: 'Orders', icon: ClipboardList, href: '/seller/orders' },
+  { label: 'RFQ / Quotes', icon: ClipboardList, href: '/seller/rfq' },
+  { label: 'Promotions', icon: PercentSquare, href: '/seller/promotions' },
+  { label: 'Returns', icon: RotateCcw, href: '/seller/returns' },
+  { label: 'Payouts', icon: Wallet, href: '/seller/payouts' },
+  { label: 'Health', icon: Shield, href: '/seller/health' },
+  { label: 'Analytics', icon: BarChart3, href: '/seller/analytics' },
+  { label: 'Settings', icon: Settings2, href: '/seller/settings' },
 ];
 
 // ─── Notification types ──────────────────────────────────────────────────────
@@ -132,11 +132,10 @@ function SidebarLink({ item, collapsed }: { item: NavItem; collapsed: boolean })
       <motion.div
         whileHover={{ x: 2 }}
         whileTap={{ scale: 0.98 }}
-        className={`group relative flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-all duration-150 ${
-          isActive
+        className={`group relative flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-all duration-150 ${isActive
             ? 'bg-[#CCFF00] text-black font-extrabold shadow-[0_0_16px_rgba(204,255,0,0.3)]'
             : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900/60 font-semibold'
-        }`}
+          }`}
       >
         <Icon
           size={16}
@@ -407,220 +406,219 @@ export default function SellerShell({ children, title, breadcrumbs }: SellerShel
         <div className="w-full max-w-7xl mx-auto space-y-5">
           {/* ─── EXPANDED TOP NAVBAR WITH BREATHING ROOM ─── */}
           <header className="min-h-16 w-full flex items-center justify-between px-4 sm:px-6 py-2.5 rounded-2xl bg-[#FFFFFF] dark:bg-[#0D1117]/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800/60 shadow-sm shrink-0 transition-colors duration-200 overflow-x-auto horizontal-scroll-rail">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2 transition md:hidden shrink-0 bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white"
-              title="Open Navigation"
-            >
-              <Layers size={16} />
-            </button>
-
-            {/* Breadcrumbs styling */}
-            <nav aria-label="Breadcrumb" className="flex items-center text-sm font-semibold tracking-wide text-neutral-600 dark:text-neutral-300 min-w-0 overflow-hidden">
-              {computedBreadcrumbs.map((bc, i) => {
-                const isLast = i === computedBreadcrumbs.length - 1;
-                const resolvedHref = bc.href || resolveBreadcrumbRoute(bc.label);
-                const isClickable = !isLast && !!resolvedHref;
-
-                return (
-                  <React.Fragment key={i}>
-                    {i > 0 && (
-                      <span className="px-2 text-neutral-400 dark:text-neutral-600 select-none shrink-0 font-normal">
-                        ›
-                      </span>
-                    )}
-                    {isClickable ? (
-                      <Link
-                        href={resolvedHref!}
-                        className="hover:text-black dark:hover:text-[#CCFF00] transition-colors cursor-pointer text-neutral-600 dark:text-neutral-400 font-semibold text-sm truncate max-w-[140px] sm:max-w-[220px]"
-                      >
-                        {bc.label}
-                      </Link>
-                    ) : (
-                      <span className="font-bold text-sm text-neutral-900 dark:text-white select-text truncate max-w-[160px] sm:max-w-[280px]">
-                        {bc.label}
-                      </span>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Right Header Action Cluster */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-4">
-            {/* View Buyer Storefront External CTA button */}
-            <a
-              href={BUYER_STOREFRONT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#CCFF00]/60 dark:border-[#CCFF00]/40 bg-[#CCFF00]/15 dark:bg-[#CCFF00]/10 px-4 py-2 text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-[#CCFF00] transition hover:bg-[#CCFF00] hover:text-black hover:shadow-[0_0_16px_rgba(204,255,0,0.3)] active:scale-95"
-            >
-              <span>VIEW BUYER STOREFRONT ↗</span>
-            </a>
-
-            {/* Theme toggle */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={toggleTheme}
-              className="shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2.5 text-neutral-800 dark:text-neutral-200 hover:text-[#CCFF00] transition-colors duration-200 shadow-sm"
-              title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
-            >
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.span
-                  key={theme}
-                  initial={{ opacity: 0, scale: 0.8, rotate: -25 }}
-                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  exit={{ opacity: 0, scale: 0.8, rotate: 25 }}
-                  transition={{ duration: 0.15 }}
-                  className="block"
-                >
-                  {isDark ? <Sun size={15} /> : <Moon size={15} />}
-                </motion.span>
-              </AnimatePresence>
-            </motion.button>
-
-            {/* Notification bell */}
-            <div className="relative shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Mobile hamburger */}
               <button
-                onClick={() => setBellOpen(b => !b)}
-                className="relative shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2.5 text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white transition shadow-sm"
-                title="Notifications"
+                onClick={() => setMobileOpen(true)}
+                className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-2 transition md:hidden shrink-0 bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white"
+                title="Open Navigation"
               >
-                <Bell size={15} />
-                {unread > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#CCFF00] text-[8px] font-black text-black shadow-[0_0_6px_rgba(204,255,0,0.8)]">
-                    {unread}
-                  </span>
-                )}
+                <Layers size={16} />
               </button>
 
-              {/* Notification dropdown drawer */}
-              <AnimatePresence>
-                {bellOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setBellOpen(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-12 z-50 w-80 rounded-2xl border border-neutral-200 dark:border-[#1F2430] bg-[#FFFFFF] dark:bg-[#0D1117] shadow-2xl overflow-hidden"
-                    >
-                      <div className="flex items-center justify-between border-b border-neutral-200 dark:border-[#1F2430] px-4 py-3">
-                        <span className="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white">
-                          Live Notifications
+              {/* Breadcrumbs styling */}
+              <nav aria-label="Breadcrumb" className="flex items-center text-sm font-semibold tracking-wide text-neutral-600 dark:text-neutral-300 min-w-0 overflow-hidden">
+                {computedBreadcrumbs.map((bc, i) => {
+                  const isLast = i === computedBreadcrumbs.length - 1;
+                  const resolvedHref = bc.href || resolveBreadcrumbRoute(bc.label);
+                  const isClickable = !isLast && !!resolvedHref;
+
+                  return (
+                    <React.Fragment key={i}>
+                      {i > 0 && (
+                        <span className="px-2 text-neutral-400 dark:text-neutral-600 select-none shrink-0 font-normal">
+                          ›
                         </span>
-                        {unread > 0 && (
-                          <button
-                            onClick={markAllRead}
-                            className="text-[10px] font-bold text-[#CCFF00] hover:underline"
-                          >
-                            Mark all read
-                          </button>
-                        )}
-                      </div>
-                      <div className="max-h-72 overflow-y-auto scrollbar-thin divide-y divide-neutral-100 dark:divide-[#1F2430]/60">
-                        {notifications.length === 0 ? (
-                          <div className="py-8 text-center text-xs text-neutral-500">
-                            No notifications yet
-                          </div>
-                        ) : (
-                          notifications.map(n => (
-                            <div
-                              key={n.id}
-                              className={`p-3 text-xs transition ${
-                                n.read ? 'opacity-60' : 'bg-[#CCFF00]/5'
-                              }`}
+                      )}
+                      {isClickable ? (
+                        <Link
+                          href={resolvedHref!}
+                          className="hover:text-black dark:hover:text-[#CCFF00] transition-colors cursor-pointer text-neutral-600 dark:text-neutral-400 font-semibold text-sm truncate max-w-[140px] sm:max-w-[220px]"
+                        >
+                          {bc.label}
+                        </Link>
+                      ) : (
+                        <span className="font-bold text-sm text-neutral-900 dark:text-white select-text truncate max-w-[160px] sm:max-w-[280px]">
+                          {bc.label}
+                        </span>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Right Header Action Cluster */}
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-4">
+              {/* View Buyer Storefront External CTA button */}
+              <a
+                href={BUYER_STOREFRONT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#CCFF00]/60 dark:border-[#CCFF00]/40 bg-[#CCFF00]/15 dark:bg-[#CCFF00]/10 px-4 py-2 text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-[#CCFF00] transition hover:bg-[#CCFF00] hover:text-black hover:shadow-[0_0_16px_rgba(204,255,0,0.3)] active:scale-95"
+              >
+                <span>VIEW BUYER STOREFRONT ↗</span>
+              </a>
+
+              {/* Theme toggle */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleTheme}
+                className="shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2.5 text-neutral-800 dark:text-neutral-200 hover:text-[#CCFF00] transition-colors duration-200 shadow-sm"
+                title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+              >
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={theme}
+                    initial={{ opacity: 0, scale: 0.8, rotate: -25 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, rotate: 25 }}
+                    transition={{ duration: 0.15 }}
+                    className="block"
+                  >
+                    {isDark ? <Sun size={15} /> : <Moon size={15} />}
+                  </motion.span>
+                </AnimatePresence>
+              </motion.button>
+
+              {/* Notification bell */}
+              <div className="relative shrink-0">
+                <button
+                  onClick={() => setBellOpen(b => !b)}
+                  className="relative shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2.5 text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white transition shadow-sm"
+                  title="Notifications"
+                >
+                  <Bell size={15} />
+                  {unread > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-[#CCFF00] text-[8px] font-black text-black shadow-[0_0_6px_rgba(204,255,0,0.8)]">
+                      {unread}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification dropdown drawer */}
+                <AnimatePresence>
+                  {bellOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setBellOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-12 z-50 w-80 rounded-2xl border border-neutral-200 dark:border-[#1F2430] bg-[#FFFFFF] dark:bg-[#0D1117] shadow-2xl overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-[#1F2430] px-4 py-3">
+                          <span className="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white">
+                            Live Notifications
+                          </span>
+                          {unread > 0 && (
+                            <button
+                              onClick={markAllRead}
+                              className="text-[10px] font-bold text-[#CCFF00] hover:underline"
                             >
-                              <div className="flex items-center gap-1.5">
-                                {!n.read && (
-                                  <span className="h-1.5 w-1.5 rounded-full bg-[#CCFF00]" />
-                                )}
-                                <span className="font-bold text-neutral-900 dark:text-white">
-                                  {n.title}
+                              Mark all read
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-72 overflow-y-auto scrollbar-thin divide-y divide-neutral-100 dark:divide-[#1F2430]/60">
+                          {notifications.length === 0 ? (
+                            <div className="py-8 text-center text-xs text-neutral-500">
+                              No notifications yet
+                            </div>
+                          ) : (
+                            notifications.map(n => (
+                              <div
+                                key={n.id}
+                                className={`p-3 text-xs transition ${n.read ? 'opacity-60' : 'bg-[#CCFF00]/5'
+                                  }`}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  {!n.read && (
+                                    <span className="h-1.5 w-1.5 rounded-full bg-[#CCFF00]" />
+                                  )}
+                                  <span className="font-bold text-neutral-900 dark:text-white">
+                                    {n.title}
+                                  </span>
+                                </div>
+                                <p className="mt-0.5 text-[11px] text-neutral-600 dark:text-neutral-400">
+                                  {n.body}
+                                </p>
+                                <span className="mt-1 block text-[9px] font-mono text-neutral-400 dark:text-neutral-500">
+                                  {new Date(n.at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <p className="mt-0.5 text-[11px] text-neutral-600 dark:text-neutral-400">
-                                {n.body}
-                              </p>
-                              <span className="mt-1 block text-[9px] font-mono text-neutral-400 dark:text-neutral-500">
-                                {new Date(n.at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+                            ))
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
 
-            {/* Merchant Identity & Sign Out Cluster */}
-            <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
-              <button
-                type="button"
-                onClick={() => setIsProfileModalOpen(true)}
-                className="shrink-0 flex items-center gap-2.5 px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-sm active:scale-95 border bg-neutral-100 hover:bg-neutral-200/80 border-neutral-300/80 text-neutral-900 dark:bg-neutral-900/80 dark:hover:bg-neutral-800 dark:border-neutral-800 dark:text-white group"
-                title="Click to edit Store Profile & Business Details"
-              >
-                {/* Store Initial Circle */}
-                <span className="h-6 w-6 rounded-full font-black text-xs flex items-center justify-center select-none shadow-sm bg-emerald-500 text-white dark:bg-[#CCFF00] dark:text-black dark:shadow-[0_0_8px_rgba(204,255,0,0.35)]">
-                  {(sellerProfile?.store_name || sellerProfile?.business_name || storeName || "N").charAt(0).toUpperCase()}
-                </span>
-
-                {/* Store Display Name */}
-                <span className="text-xs font-bold truncate max-w-[130px] text-neutral-900 dark:text-white transition-colors group-hover:text-emerald-600 dark:group-hover:text-[#CCFF00]">
-                  {sellerProfile?.store_name || sellerProfile?.business_name || storeName || "Nile Store"}
-                </span>
-
-                {/* Status Badge */}
-                <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded border transition-colors bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60">
-                  {sellerProfile?.kyc_status === 'verified' || isVerified ? 'VERIFIED' : 'PENDING'}
-                </span>
-
-                {/* Edit Pencil Icon */}
-                <svg 
-                  className="w-3 h-3 transition-colors text-neutral-500 dark:text-neutral-400 group-hover:text-emerald-600 dark:group-hover:text-[#CCFF00] ml-0.5" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
+              {/* Merchant Identity & Sign Out Cluster */}
+              <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="shrink-0 flex items-center gap-2.5 px-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer shadow-sm active:scale-95 border bg-neutral-100 hover:bg-neutral-200/80 border-neutral-300/80 text-neutral-900 dark:bg-neutral-900/80 dark:hover:bg-neutral-800 dark:border-neutral-800 dark:text-white group"
+                  title="Click to edit Store Profile & Business Details"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
+                  {/* Store Initial Circle */}
+                  <span className="h-6 w-6 rounded-full font-black text-xs flex items-center justify-center select-none shadow-sm bg-emerald-500 text-white dark:bg-[#CCFF00] dark:text-black dark:shadow-[0_0_8px_rgba(204,255,0,0.35)]">
+                    {(sellerProfile?.store_name || sellerProfile?.business_name || storeName || "N").charAt(0).toUpperCase()}
+                  </span>
 
-              {/* Sign Out Button in Header */}
-              <button
-                onClick={handleLogout}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 hover:border-red-500/30 transition"
-                title="Sign Out"
-              >
-                <LogOut size={13} />
-                <span>SIGN OUT</span>
-              </button>
+                  {/* Store Display Name */}
+                  <span className="text-xs font-bold truncate max-w-[130px] text-neutral-900 dark:text-white transition-colors group-hover:text-emerald-600 dark:group-hover:text-[#CCFF00]">
+                    {sellerProfile?.store_name || sellerProfile?.business_name || storeName || "Nile Store"}
+                  </span>
+
+                  {/* Status Badge */}
+                  <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded border transition-colors bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60">
+                    {sellerProfile?.kyc_status === 'verified' || isVerified ? 'VERIFIED' : 'PENDING'}
+                  </span>
+
+                  {/* Edit Pencil Icon */}
+                  <svg
+                    className="w-3 h-3 transition-colors text-neutral-500 dark:text-neutral-400 group-hover:text-emerald-600 dark:group-hover:text-[#CCFF00] ml-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+
+                {/* Sign Out Button in Header */}
+                <button
+                  onClick={handleLogout}
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 hover:border-red-500/30 transition"
+                  title="Sign Out"
+                >
+                  <LogOut size={13} />
+                  <span>SIGN OUT</span>
+                </button>
+              </div>
             </div>
+          </header>
+
+          {/* ─── DYNAMIC PAGE CONTENT ─── */}
+          <div className="w-full min-w-0">
+            {children}
           </div>
-        </header>
-
-        {/* ─── DYNAMIC PAGE CONTENT ─── */}
-        <div className="w-full min-w-0">
-          {children}
         </div>
-      </div>
-    </main>
+      </main>
 
-    {/* Store Profile & Business Identity Editor Modal */}
-    <StoreProfileModal
-      isOpen={isProfileModalOpen}
-      onClose={() => setIsProfileModalOpen(false)}
-    />
+      {/* Store Profile & Business Identity Editor Modal */}
+      <StoreProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 }

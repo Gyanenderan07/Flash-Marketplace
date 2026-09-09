@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, LayoutGroup } from 'framer-motion';
 import { AlertCircle, Loader2, Settings2, Trash2, UserPlus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -12,6 +12,7 @@ import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
 import { ConfirmModal } from '@/components/seller/ConfirmModal';
 import SellerShell from './SellerShell';
+import { smoothCenter } from '@/lib/utils';
 
 const ROLES: TeamMemberRole[] = ['owner', 'manager', 'fulfillment_staff', 'support'];
 
@@ -19,24 +20,32 @@ type SettingsTab = 'profile' | 'team' | 'notifications';
 
 export default function SettingsPage() {
   const { isDark } = useTheme();
-  const [activeTab,  setActiveTab]  = useState<SettingsTab>('profile');
-  const [seller,     setSeller]     = useState<Seller | null>(null);
-  const [members,    setMembers]    = useState<SellerTeamMember[]>([]);
-  const [isLoading,  setIsLoading]  = useState(true);
-  const [isSaving,   setIsSaving]   = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const settingsTabsRef = useRef<HTMLDivElement>(null);
+  const activeSettingsRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (activeSettingsRef.current && settingsTabsRef.current) {
+      smoothCenter(settingsTabsRef.current, activeSettingsRef.current);
+    }
+  }, [activeTab]);
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [members, setMembers] = useState<SellerTeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<SellerTeamMember | null>(null);
 
   // Profile form state
-  const [bizName,    setBizName]    = useState('');
-  const [legalName,  setLegalName]  = useState('');
-  const [taxId,      setTaxId]      = useState('');
-  const [logoUrl,    setLogoUrl]    = useState('');
-  const [policies,   setPolicies]   = useState({ returns: '', shipping: '', warranty: '' });
+  const [bizName, setBizName] = useState('');
+  const [legalName, setLegalName] = useState('');
+  const [taxId, setTaxId] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [policies, setPolicies] = useState({ returns: '', shipping: '', warranty: '' });
 
   // Team invite state
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole,  setInviteRole]  = useState<TeamMemberRole>('fulfillment_staff');
-  const [isInviting,  setIsInviting]  = useState(false);
+  const [inviteRole, setInviteRole] = useState<TeamMemberRole>('fulfillment_staff');
+  const [isInviting, setIsInviting] = useState(false);
 
   // Notification toggles
   const [notifs, setNotifs] = useState({ newOrder: true, newRFQ: true, lowStock: true, payout: false });
@@ -107,12 +116,12 @@ export default function SettingsPage() {
   };
 
   const C = {
-    card:   isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
-    well:   isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
-    text:   isDark ? 'text-white'  : 'text-gray-900',
-    muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
-    input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
-    label:  isDark ? 'text-neutral-400' : 'text-gray-500',
+    card: isDark ? 'border-[#1F2430] bg-[#0D1117]' : 'border-gray-200 bg-white',
+    well: isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-gray-50',
+    text: isDark ? 'text-white' : 'text-gray-900',
+    muted: isDark ? 'text-neutral-500' : 'text-gray-400',
+    input: isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00] placeholder:text-neutral-600' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
+    label: isDark ? 'text-neutral-400' : 'text-gray-500',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
@@ -127,20 +136,44 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className={`mb-6 flex overflow-x-auto horizontal-scroll-rail gap-1.5 border-b pb-3 ${C.divider}`}>
-        {[
-          { id: 'profile',       label: 'Store Profile', icon: Settings2 },
-          { id: 'team',          label: 'Team Members',  icon: Users     },
-          { id: 'notifications', label: 'Notifications', icon: Settings2 },
-        ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id as SettingsTab)}
-            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
-              activeTab === tab.id ? 'bg-[#CCFF00] text-black' : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
-            }`}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <LayoutGroup id="settings-tabs">
+        <div
+          ref={settingsTabsRef}
+          className={`mb-6 flex overflow-x-auto no-scrollbar horizontal-scroll-rail gap-1.5 border-b pb-3 touch-pan-x select-none scroll-smooth ${C.divider}`}
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {[
+            { id: 'profile', label: 'Store Profile', icon: Settings2 },
+            { id: 'team', label: 'Team Members', icon: Users },
+            { id: 'notifications', label: 'Notifications', icon: Settings2 },
+          ].map(tab => {
+            const isTabActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={isTabActive ? (el) => { activeSettingsRef.current = el; } : undefined}
+                onClick={(e) => {
+                  setActiveTab(tab.id as SettingsTab);
+                  smoothCenter(settingsTabsRef.current, e.currentTarget);
+                }}
+                className={`relative shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${isTabActive
+                    ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.25)]'
+                    : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
+                  }`}
+              >
+                {isTabActive && (
+                  <motion.div
+                    layoutId="settings-tab-pill"
+                    className="absolute inset-0 rounded-full bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.3)]"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </LayoutGroup>
 
       {isLoading ? (
         <SkeletonTable rows={4} cols={3} />
@@ -252,10 +285,10 @@ export default function SettingsPage() {
             <div className={`rounded-2xl border p-5 space-y-4 ${C.card}`}>
               <div className={`text-[10px] font-black uppercase tracking-widest ${C.muted}`}>Notification Preferences</div>
               {[
-                { key: 'newOrder' as const,  label: 'New Order Alerts',  sub: 'Notify when a new order is placed on the storefront' },
-                { key: 'newRFQ'  as const,   label: 'New RFQ Requests',  sub: 'Notify when a buyer submits a quote request' },
-                { key: 'lowStock' as const,  label: 'Low Stock Warnings', sub: 'Alert when product stock falls below threshold' },
-                { key: 'payout'  as const,   label: 'Payout Confirmations', sub: 'Notify when a payout is processed to your account' },
+                { key: 'newOrder' as const, label: 'New Order Alerts', sub: 'Notify when a new order is placed on the storefront' },
+                { key: 'newRFQ' as const, label: 'New RFQ Requests', sub: 'Notify when a buyer submits a quote request' },
+                { key: 'lowStock' as const, label: 'Low Stock Warnings', sub: 'Alert when product stock falls below threshold' },
+                { key: 'payout' as const, label: 'Payout Confirmations', sub: 'Notify when a payout is processed to your account' },
               ].map(n => (
                 <div key={n.key} className={`flex items-center justify-between gap-4 rounded-xl border p-4 ${C.well}`}>
                   <div>
@@ -264,13 +297,11 @@ export default function SettingsPage() {
                   </div>
                   <button
                     onClick={() => setNotifs(prev => ({ ...prev, [n.key]: !prev[n.key] }))}
-                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
-                      notifs[n.key] ? 'bg-[#CCFF00]' : isDark ? 'bg-[#1F2430]' : 'bg-gray-200'
-                    }`}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${notifs[n.key] ? 'bg-[#CCFF00]' : isDark ? 'bg-[#1F2430]' : 'bg-gray-200'
+                      }`}
                   >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform shadow ${
-                      notifs[n.key] ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform shadow ${notifs[n.key] ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
                   </button>
                 </div>
               ))}

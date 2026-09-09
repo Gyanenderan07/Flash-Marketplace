@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
   AlertCircle, Check, ChevronLeft, ChevronRight, ClipboardList,
   Loader2, Truck, X, Download, Filter
@@ -16,32 +16,33 @@ import { SkeletonTable } from '@/components/seller/SkeletonTable';
 import { EmptyState } from '@/components/seller/EmptyState';
 import { ConfirmModal } from '@/components/seller/ConfirmModal';
 import { TableSortDropdown, type SortOption } from '@/components/seller/TableSortDropdown';
+import { smoothCenter } from '@/lib/utils';
 import SellerShell from './SellerShell';
 
 export type OrderSortKey = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc' | 'customer_asc';
 
 export const ORDER_SORT_OPTIONS: SortOption<OrderSortKey>[] = [
-  { id: 'newest',       label: 'Newest First' },
-  { id: 'oldest',       label: 'Oldest First' },
-  { id: 'amount_desc',  label: 'Amount: High to Low' },
-  { id: 'amount_asc',   label: 'Amount: Low to High' },
+  { id: 'newest', label: 'Newest First' },
+  { id: 'oldest', label: 'Oldest First' },
+  { id: 'amount_desc', label: 'Amount: High to Low' },
+  { id: 'amount_asc', label: 'Amount: Low to High' },
   { id: 'customer_asc', label: 'Buyer Name (A-Z)' },
 ];
 
 const PAGE_SIZE = 20;
-const SPRING    = { type: 'spring', stiffness: 300, damping: 25 } as const;
-const FADE      = { duration: 0.2, ease: 'easeOut' } as const;
+const SPRING = { type: 'spring', stiffness: 300, damping: 25 } as const;
+const FADE = { duration: 0.2, ease: 'easeOut' } as const;
 
 type StatusTab = 'all' | 'pending' | 'processing' | 'dispatched' | 'delivered' | 'cancelled' | 'returned';
 
 const STATUS_TABS: { id: StatusTab; label: string }[] = [
-  { id: 'all',        label: 'All'               },
-  { id: 'pending',    label: 'New'               },
+  { id: 'all', label: 'All' },
+  { id: 'pending', label: 'New' },
   { id: 'processing', label: 'Awaiting Dispatch' },
-  { id: 'dispatched', label: 'Shipped'           },
-  { id: 'delivered',  label: 'Delivered'         },
-  { id: 'cancelled',  label: 'Cancelled'         },
-  { id: 'returned',   label: 'Returned'          },
+  { id: 'dispatched', label: 'Shipped' },
+  { id: 'delivered', label: 'Delivered' },
+  { id: 'cancelled', label: 'Cancelled' },
+  { id: 'returned', label: 'Returned' },
 ];
 
 const FULFILLMENT_STEPS = ['pending', 'processing', 'dispatched', 'delivered'] as const;
@@ -58,16 +59,24 @@ export default function OrdersPage() {
   const { isDark } = useTheme();
   const { sellerId, user } = useAuth();
   const effectiveSellerId = sellerId || user?.id || null;
-  const [orders,       setOrders]       = useState<OrderExtended[]>([]);
-  const [isLoading,    setIsLoading]    = useState(true);
-  const [error,        setError]        = useState<string | null>(null);
-  const [statusTab,    setStatusTab]    = useState<StatusTab>('all');
-  const [sortKey,      setSortKey]      = useState<OrderSortKey>('newest');
-  const [page,         setPage]         = useState(1);
+  const [orders, setOrders] = useState<OrderExtended[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statusTab, setStatusTab] = useState<StatusTab>('all');
+  const statusRailRef = useRef<HTMLDivElement>(null);
+  const activeStatusRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (activeStatusRef.current && statusRailRef.current) {
+      smoothCenter(statusRailRef.current, activeStatusRef.current);
+    }
+  }, [statusTab]);
+  const [sortKey, setSortKey] = useState<OrderSortKey>('newest');
+  const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<OrderExtended | null>(null);
-  const [carrier,      setCarrier]      = useState('Delhivery Express');
-  const [trackingNum,  setTrackingNum]  = useState('');
-  const [isSaving,     setIsSaving]     = useState(false);
+  const [carrier, setCarrier] = useState('Delhivery Express');
+  const [trackingNum, setTrackingNum] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -129,8 +138,8 @@ export default function OrdersPage() {
   }, [orders]);
 
   const advanceStatus = async (order: OrderExtended) => {
-    const cur  = (order.delivery_status || 'pending').toLowerCase();
-    const idx  = FULFILLMENT_STEPS.indexOf(cur as typeof FULFILLMENT_STEPS[number]);
+    const cur = (order.delivery_status || 'pending').toLowerCase();
+    const idx = FULFILLMENT_STEPS.indexOf(cur as typeof FULFILLMENT_STEPS[number]);
     if (idx < 0 || idx >= FULFILLMENT_STEPS.length - 1) return;
     const next = FULFILLMENT_STEPS[idx + 1];
     const timeline: StatusTimelineEntry[] = [
@@ -167,7 +176,7 @@ export default function OrdersPage() {
   const printPackingSlip = (order: OrderExtended) => {
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<!DOCTYPE html><html><head><title>Packing Slip #${order.id.slice(0,8)}</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>Packing Slip #${order.id.slice(0, 8)}</title>
     <style>body{font-family:monospace;padding:2rem;max-width:600px;margin:auto}h1{font-size:1.2rem;border-bottom:2px solid #000;padding-bottom:0.5rem}.label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:#666;margin-top:1rem}.value{font-size:0.9rem;margin-top:0.25rem}table{width:100%;border-collapse:collapse;margin-top:1rem}td,th{padding:0.5rem;border-bottom:1px solid #ddd;text-align:left;font-size:0.8rem}@media print{button{display:none}}</style>
     </head><body>
     <h1>FLASH B2B — PACKING SLIP</h1>
@@ -189,7 +198,7 @@ export default function OrdersPage() {
     if (!w) return;
     const addr = order.shipping_address as { street?: string; city?: string; state?: string; zip?: string; country?: string } | null;
     const addrStr = addr ? `${addr.street || ''}, ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}, ${addr.country || 'India'}` : 'Commercial Delivery Address on File';
-    w.document.write(`<!DOCTYPE html><html><head><title>Shipping Label #${order.id.slice(0,8)}</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>Shipping Label #${order.id.slice(0, 8)}</title>
     <style>body{font-family:monospace;padding:1.5rem;max-width:480px;margin:auto;border:3px dashed #000}h1{font-size:1.3rem;letter-spacing:0.1em;margin:0 0 1rem 0;border-bottom:2px solid #000;padding-bottom:0.5rem}.sec{margin-bottom:1rem}.label{font-size:0.65rem;text-transform:uppercase;color:#555;margin:0 0 0.2rem 0}.val{font-size:0.95rem;font-weight:bold;margin:0}.barcode{letter-spacing:0.3em;font-size:1.6rem;text-align:center;padding:1rem 0;border-top:1px solid #000;border-bottom:1px solid #000;margin:1rem 0}@media print{button{display:none}}</style>
     </head><body>
     <h1>FLASH LOGISTICS PRIORITY</h1>
@@ -206,13 +215,13 @@ export default function OrdersPage() {
   };
 
   const C = {
-    card:   isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
-    well:   isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
-    text:   isDark ? 'text-white'  : 'text-gray-900',
-    muted:  isDark ? 'text-neutral-500' : 'text-gray-400',
-    th:     isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
-    row:    isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
-    input:  isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
+    card: isDark ? 'border-neutral-800/80 bg-[#0D1117]' : 'border-neutral-200/90 bg-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.03)]',
+    well: isDark ? 'border-neutral-800 bg-[#12161F]' : 'border-neutral-200 bg-neutral-50/90',
+    text: isDark ? 'text-white' : 'text-gray-900',
+    muted: isDark ? 'text-neutral-500' : 'text-gray-400',
+    th: isDark ? 'text-neutral-300 bg-[#14171F]' : 'text-neutral-700 bg-neutral-100',
+    row: isDark ? 'border-[#1F2430]/60 hover:bg-[#12161F]/70' : 'border-gray-100 hover:bg-gray-50',
+    input: isDark ? 'border-[#1F2430] bg-[#12161F] text-white focus:border-[#CCFF00]' : 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#CCFF00]',
     divider: isDark ? 'border-[#1F2430]' : 'border-gray-100',
   };
 
@@ -226,8 +235,8 @@ export default function OrdersPage() {
         </div>
         <button
           onClick={() => {
-            const csv = [['ID','Customer','Email','Amount','Status','Date'],
-              ...orders.map(o => [o.id, o.customer_name || '', o.customer_email || '', o.total_amount, o.delivery_status || 'pending', o.created_at])
+            const csv = [['ID', 'Customer', 'Email', 'Amount', 'Status', 'Date'],
+            ...orders.map(o => [o.id, o.customer_name || '', o.customer_email || '', o.total_amount, o.delivery_status || 'pending', o.created_at])
             ].map(r => r.join(',')).join('\n');
             const a = Object.assign(document.createElement('a'), {
               href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
@@ -243,23 +252,48 @@ export default function OrdersPage() {
       </div>
 
       {/* Status tabs */}
-      <div className={`mb-4 flex overflow-x-auto horizontal-scroll-rail gap-1.5 border-b pb-3 ${C.divider}`}>
-        {STATUS_TABS.map(tab => (
-          <button key={tab.id}
-            onClick={() => { setStatusTab(tab.id); setPage(1); }}
-            className={`flex-shrink-0 shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
-              statusTab === tab.id
-                ? 'bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-                : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
-            }`}
-          >
-            {tab.label}
-            {counts[tab.id] !== undefined && counts[tab.id] > 0 && (
-              <span className="ml-1.5 rounded-full bg-black/20 px-1.5">{counts[tab.id]}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <LayoutGroup id="orders-status-rail">
+        <div
+          ref={statusRailRef}
+          className={`mb-4 flex overflow-x-auto no-scrollbar horizontal-scroll-rail gap-1.5 border-b pb-3 touch-pan-x select-none scroll-smooth ${C.divider}`}
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {STATUS_TABS.map(tab => {
+            const isTabActive = statusTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={isTabActive ? (el) => { activeStatusRef.current = el; } : undefined}
+                onClick={(e) => {
+                  setStatusTab(tab.id);
+                  setPage(1);
+                  smoothCenter(statusRailRef.current, e.currentTarget);
+                }}
+                className={`relative flex-shrink-0 shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition cursor-pointer ${isTabActive
+                    ? 'text-black font-extrabold shadow-[0_0_12px_rgba(204,255,0,0.25)]'
+                    : `border ${C.well} ${C.muted} hover:border-[#CCFF00]/30`
+                  }`}
+              >
+                {isTabActive && (
+                  <motion.div
+                    layoutId="orders-status-pill"
+                    className="absolute inset-0 rounded-full bg-[#CCFF00] z-0 shadow-[0_0_12px_rgba(204,255,0,0.35)]"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  />
+                )}
+                <span className="relative z-10 inline-flex items-center">
+                  {tab.label}
+                  {counts[tab.id] !== undefined && counts[tab.id] > 0 && (
+                    <span className={`ml-1.5 rounded-full px-1.5 ${isTabActive ? 'bg-black/20 text-black' : 'bg-neutral-200 dark:bg-neutral-800'}`}>
+                      {counts[tab.id]}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </LayoutGroup>
 
       {/* ── Stats & Sort bar ── */}
       {!isLoading && (
@@ -317,11 +351,10 @@ export default function OrdersPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => { setSelectedOrder(o); setTrackingNum(o.tracking_number || ''); setCarrier(o.carrier || 'Delhivery Express'); }}
-                            className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition ${
-                              (o.delivery_status || 'pending') !== 'delivered'
+                            className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition ${(o.delivery_status || 'pending') !== 'delivered'
                                 ? 'bg-black text-[#CCFF00] shadow-[0_0_10px_rgba(204,255,0,0.2)]'
                                 : `border ${C.well} ${C.muted}`
-                            }`}>
+                              }`}>
                             {(o.delivery_status || 'pending') === 'pending' ? 'Process' : 'Update'}
                           </button>
                           <button onClick={() => printPackingSlip(o)}
@@ -431,16 +464,15 @@ export default function OrdersPage() {
                   <div className="flex items-center gap-1">
                     {FULFILLMENT_STEPS.map((step, i) => {
                       const cur = FULFILLMENT_STEPS.indexOf((selectedOrder.delivery_status || 'pending') as typeof FULFILLMENT_STEPS[number]);
-                      const done   = i <= cur;
+                      const done = i <= cur;
                       const active = i === cur;
                       return (
                         <React.Fragment key={step}>
                           <div className={`flex flex-col items-center gap-1 flex-1`}>
-                            <div className={`h-5 w-5 rounded-full border-2 grid place-items-center transition ${
-                              done
+                            <div className={`h-5 w-5 rounded-full border-2 grid place-items-center transition ${done
                                 ? 'border-[#CCFF00] bg-[#CCFF00]'
                                 : isDark ? 'border-[#1F2430] bg-[#12161F]' : 'border-gray-200 bg-white'
-                            }`}>
+                              }`}>
                               {done && <Check size={10} className="text-black" />}
                             </div>
                             <span className={`text-[8px] font-bold uppercase tracking-wider ${active ? 'text-[#CCFF00]' : C.muted}`}>
