@@ -1,14 +1,10 @@
 import React from 'react';
 import { Link } from 'wouter';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ExternalLink,
-  Moon,
   ShieldCheck,
-  Sun,
   Zap
 } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { BUYER_STOREFRONT_URL } from '@/lib/supabase';
 import { ThreeBackground } from '@/components/ThreeBackground';
 
@@ -18,35 +14,10 @@ interface AuthSplitLayoutProps {
 }
 
 export function AuthSplitLayout({ children, badgeText = 'Enterprise Verified' }: AuthSplitLayoutProps) {
-  const { theme, isDark, toggleTheme } = useTheme();
-
   return (
-    <div className="relative h-screen max-h-screen w-screen overflow-hidden flex items-center justify-center p-3 sm:p-6 lg:p-8 bg-[#000000] text-neutral-900 dark:text-white antialiased select-none">
+    <div className="dark relative h-screen max-h-screen w-screen overflow-hidden flex items-center justify-center p-3 sm:p-6 lg:p-8 bg-[#000000] text-white antialiased select-none">
       {/* ── 3D THREE.JS AMBIENT CANVAS BACKGROUND ── */}
       <ThreeBackground className="opacity-45" density="low" />
-
-      {/* ── FLOATING THEME TOGGLE (Top-Right) ── */}
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6 z-50">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={toggleTheme}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 bg-[#0D1117]/90 text-neutral-300 shadow-md backdrop-blur-md transition hover:border-[#CCFF00]"
-          title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={theme}
-              initial={{ opacity: 0, rotate: -20 }}
-              animate={{ opacity: 1, rotate: 0 }}
-              exit={{ opacity: 0, rotate: 20 }}
-              transition={{ duration: 0.15 }}
-              className="block"
-            >
-              {isDark ? <Sun size={15} /> : <Moon size={15} />}
-            </motion.span>
-          </AnimatePresence>
-        </motion.button>
-      </div>
 
       {/* ── SPLIT-SCREEN CONTAINER (LOCKED VIEWPORT FIT) ── */}
       <div className="relative z-10 w-full max-w-5xl h-full max-h-[96vh] sm:max-h-[90vh] rounded-3xl border border-neutral-800/90 bg-[#07090E]/95 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col lg:flex-row">
@@ -129,8 +100,8 @@ export function AuthSplitLayout({ children, badgeText = 'Enterprise Verified' }:
           </div>
         </div>
 
-        {/* ── RIGHT FORM CONTAINER (FITS 100% HEIGHT WITH NO SCROLLBAR) ── */}
-        <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-10 bg-white dark:bg-[#0D1117] overflow-hidden">
+        {/* ── RIGHT FORM CONTAINER (LOCKED STRICTLY TO OBSIDIAN DARK THEME) ── */}
+        <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-8 lg:p-10 bg-[#0D1117] text-white border-l border-neutral-800/80 overflow-hidden">
           <div className="w-full max-w-sm my-auto">
             {children}
           </div>

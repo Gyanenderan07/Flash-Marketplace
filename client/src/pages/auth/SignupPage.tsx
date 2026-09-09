@@ -28,10 +28,10 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isDuplicateUser, setIsDuplicateUser] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDuplicateUser, setIsDuplicateUser] = useState(false);
 
-  // If already authenticated, redirect to dashboard
+  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
       navigate('/seller/dashboard');
@@ -40,99 +40,89 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessName.trim()) {
-      setErrorMsg('Please enter your business or legal company name.');
-      setIsDuplicateUser(false);
+    setIsDuplicateUser(false);
+
+    // Validation
+    const cleanBusiness = businessName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanBusiness) {
+      setErrorMsg('Please enter your legal business or registered firm name.');
       return;
     }
-    if (!email.trim() || !password) {
-      setErrorMsg('Please provide a valid corporate email and password.');
-      setIsDuplicateUser(false);
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMsg('Please provide a valid corporate email address.');
       return;
     }
-    if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters.');
-      setIsDuplicateUser(false);
+    if (!password || password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.');
       return;
     }
 
-    setErrorMsg(null);
-    setIsDuplicateUser(false);
     setIsSubmitting(true);
+    setErrorMsg(null);
 
     try {
-      const cleanEmail = email.trim().toLowerCase();
-      const resolvedStoreName = storeName.trim() || businessName.trim();
-
-      const { error } = await signUp(
-        businessName.trim(),
-        resolvedStoreName,
-        cleanEmail,
-        password
-      );
+      const { error } = await signUp(cleanEmail, password, {
+        business_name: cleanBusiness,
+        store_name: storeName.trim() || cleanBusiness
+      });
 
       if (error) {
-        const msg = error.message || '';
+        const msg = error.message || 'Failed to create merchant account.';
+        setErrorMsg(msg);
         if (
           msg.toLowerCase().includes('already registered') ||
-          msg.toLowerCase().includes('already exists') ||
-          msg.toLowerCase().includes('user already exists')
+          msg.toLowerCase().includes('duplicate') ||
+          msg.toLowerCase().includes('already in use') ||
+          msg.toLowerCase().includes('exists')
         ) {
           setIsDuplicateUser(true);
-          setErrorMsg('An account with this email already exists. Please sign in.');
-          toast.error('Account already registered');
-        } else {
-          setIsDuplicateUser(false);
-          setErrorMsg(msg || 'Registration failed. Please check your details and try again.');
-          toast.error('Registration failed');
         }
+        setIsSubmitting(false);
       } else {
-        setBusinessName('');
-        setStoreName('');
-        setEmail('');
-        setPassword('');
-        toast.success('Account successfully created! Please sign in with your credentials.');
-        navigate(`/auth/login?registered=true&email=${encodeURIComponent(cleanEmail)}`);
+        toast.success('Registration successful! Directing to login...');
+        setTimeout(() => {
+          navigate(`/auth/login?registered=true&email=${encodeURIComponent(cleanEmail)}`);
+        }, 500);
       }
-    } catch (err) {
-      setErrorMsg('An unexpected error occurred during registration. Please try again.');
-      setIsDuplicateUser(false);
-    } finally {
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Registration exception encountered. Please retry.');
       setIsSubmitting(false);
     }
   };
 
   return (
-    <AuthSplitLayout badgeText="Seller Onboarding">
+    <AuthSplitLayout badgeText="Merchant Onboarding">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
         className="space-y-3.5"
       >
-        {/* Mobile Header (Shown only on small screens < 1024px) */}
+        {/* Mobile Header (Shown on mobile screens < 1024px) */}
         <div className="flex lg:hidden items-center gap-2 mb-1">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#CCFF00] text-black shadow-[0_0_12px_rgba(204,255,0,0.4)]">
             <Zap size={17} fill="currentColor" />
           </span>
           <div className="flex flex-col">
             <span className="text-sm font-black uppercase tracking-tight leading-none">
-              <span className="text-neutral-900 dark:text-white">FLASH </span>
-              <span className="text-[#15803D] dark:text-[#CCFF00]">BUSINESS</span>
+              <span className="text-white">FLASH </span>
+              <span className="text-[#CCFF00]">BUSINESS</span>
             </span>
-            <span className="text-[8px] font-extrabold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+            <span className="text-[8px] font-extrabold uppercase tracking-widest text-neutral-400">
               SELLER CENTRAL
             </span>
           </div>
         </div>
 
-        {/* Title Header */}
+        {/* Title */}
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-white leading-tight">
-            Register Merchant Account
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-tight">
+            Create Merchant Account
           </h1>
-          <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-            Create your supplier profile with direct storefront distribution.
+          <p className="mt-0.5 text-xs sm:text-sm text-neutral-400">
+            Register your business to sell wholesale across the Flash network.
           </p>
         </div>
 
@@ -143,7 +133,7 @@ export default function SignupPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 dark:bg-red-950/40 p-2.5 text-xs text-red-700 dark:text-red-300"
+              className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-950/40 p-2.5 text-xs text-red-300"
             >
               <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
               <div className="flex-1 leading-snug font-medium text-[11px]">
@@ -152,7 +142,7 @@ export default function SignupPage() {
                   <div className="mt-1">
                     <Link
                       href={`/auth/login?email=${encodeURIComponent(email.trim())}`}
-                      className="inline-flex items-center gap-1 font-bold text-red-700 dark:text-[#CCFF00] hover:underline"
+                      className="inline-flex items-center gap-1 font-bold text-[#CCFF00] hover:underline"
                     >
                       Sign in here →
                     </Link>
@@ -169,12 +159,12 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="legalBusinessName"
-              className="block text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-1"
+              className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1"
             >
-              Legal Business Name <span className="text-[#15803D] dark:text-[#CCFF00]">*</span>
+              Legal Business Name <span className="text-[#CCFF00]">*</span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400 dark:text-neutral-500">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500">
                 <Building2 size={14} />
               </span>
               <input
@@ -189,7 +179,7 @@ export default function SignupPage() {
                 }}
                 autoComplete="organization"
                 placeholder="e.g. Apex Industrial Solutions Pvt Ltd"
-                className="w-full h-11 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] pl-10 pr-3 text-xs font-semibold text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
+                className="w-full h-11 rounded-xl border border-neutral-800 bg-[#141720] pl-10 pr-3 text-xs font-semibold text-white placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
               />
             </div>
           </div>
@@ -198,12 +188,12 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="storeDisplayName"
-              className="block text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-1"
+              className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1"
             >
               Store Display Name (Storefront)
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400 dark:text-neutral-500">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500">
                 <ShoppingBag size={14} />
               </span>
               <input
@@ -216,7 +206,7 @@ export default function SignupPage() {
                 }}
                 autoComplete="off"
                 placeholder="e.g. Apex Official Store (Optional)"
-                className="w-full h-11 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] pl-10 pr-3 text-xs font-semibold text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
+                className="w-full h-11 rounded-xl border border-neutral-800 bg-[#141720] pl-10 pr-3 text-xs font-semibold text-white placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
               />
             </div>
           </div>
@@ -225,12 +215,12 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="corporateEmail"
-              className="block text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-1"
+              className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1"
             >
-              Corporate Email <span className="text-[#15803D] dark:text-[#CCFF00]">*</span>
+              Corporate Email <span className="text-[#CCFF00]">*</span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400 dark:text-neutral-500">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500">
                 <Mail size={14} />
               </span>
               <input
@@ -245,7 +235,7 @@ export default function SignupPage() {
                 }}
                 autoComplete="email"
                 placeholder="ops@apexindustrial.com"
-                className="w-full h-11 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] pl-10 pr-3 text-xs font-semibold text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
+                className="w-full h-11 rounded-xl border border-neutral-800 bg-[#141720] pl-10 pr-3 text-xs font-semibold text-white placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
               />
             </div>
           </div>
@@ -254,12 +244,12 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="accountPassword"
-              className="block text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-1"
+              className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1"
             >
-              Master Password (Min. 6) <span className="text-[#15803D] dark:text-[#CCFF00]">*</span>
+              Master Password (Min. 6) <span className="text-[#CCFF00]">*</span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400 dark:text-neutral-500">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500">
                 <Lock size={14} />
               </span>
               <input
@@ -274,12 +264,12 @@ export default function SignupPage() {
                 }}
                 autoComplete="new-password"
                 placeholder="••••••••••••"
-                className="w-full h-11 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] pl-10 pr-10 text-xs font-semibold text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
+                className="w-full h-11 rounded-xl border border-neutral-800 bg-[#141720] pl-10 pr-10 text-xs font-semibold text-white placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-500 hover:text-white"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -309,11 +299,11 @@ export default function SignupPage() {
         </form>
 
         {/* Existing User Link */}
-        <div className="pt-1 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+        <div className="pt-1 text-center text-xs text-neutral-400">
           Already have an account?{' '}
           <Link
             href="/auth/login"
-            className="font-bold text-neutral-900 dark:text-[#CCFF00] hover:underline"
+            className="font-bold text-[#CCFF00] hover:text-white hover:underline transition"
           >
             Sign in →
           </Link>

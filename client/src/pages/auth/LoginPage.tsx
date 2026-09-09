@@ -30,19 +30,22 @@ export default function LoginPage() {
   // Read message or prefilled email from URL query params (e.g. after signup redirect)
   useEffect(() => {
     try {
-      const searchParams = new URLSearchParams(window.location.search);
-      const registered = searchParams.get('registered');
-      const emailParam = searchParams.get('email');
-      if (emailParam) {
-        setEmail(emailParam);
+      const params = new URLSearchParams(window.location.search);
+      const prefillEmail = params.get('email');
+      const registeredMsg = params.get('registered');
+
+      if (prefillEmail) {
+        setEmail(prefillEmail);
       }
-      if (registered === 'true') {
-        toast.success('Account successfully created! Please sign in with your credentials.');
+      if (registeredMsg === 'true') {
+        toast.success('Account created! Please sign in to access your dashboard.');
       }
-    } catch {}
+    } catch {
+      // safe fallback if window search unavailable
+    }
   }, []);
 
-  // If already authenticated, redirect immediately to seller dashboard
+  // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
       navigate('/seller/dashboard');
@@ -51,26 +54,26 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
+    if (!email.trim() || !password.trim()) {
       setErrorMsg('Please enter both corporate email and password.');
       return;
     }
 
-    setErrorMsg(null);
     setIsSubmitting(true);
+    setErrorMsg(null);
 
     try {
       const { error } = await signIn(email.trim(), password);
       if (error) {
-        setErrorMsg('Invalid email or password');
-        toast.error('Invalid email or password');
+        setErrorMsg(error.message || 'Invalid credentials. Please verify email and password.');
+        setIsSubmitting(false);
       } else {
-        toast.success('Signed in to Flash Seller Central');
-        navigate('/seller/dashboard');
+        toast.success('Authenticated successfully. Loading Merchant Hub...');
+        // Navigation handled by auth effect, but fallback push:
+        setTimeout(() => navigate('/seller/dashboard'), 200);
       }
-    } catch (err) {
-      setErrorMsg('Invalid email or password');
-    } finally {
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Authentication error. Please retry.');
       setIsSubmitting(false);
     }
   };
@@ -97,10 +100,10 @@ export default function LoginPage() {
           </span>
           <div className="flex flex-col">
             <span className="text-sm font-black uppercase tracking-tight leading-none">
-              <span className="text-neutral-900 dark:text-white">FLASH </span>
-              <span className="text-[#15803D] dark:text-[#CCFF00]">BUSINESS</span>
+              <span className="text-white">FLASH </span>
+              <span className="text-[#CCFF00]">BUSINESS</span>
             </span>
-            <span className="text-[8px] font-extrabold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+            <span className="text-[8px] font-extrabold uppercase tracking-widest text-neutral-400">
               SELLER CENTRAL
             </span>
           </div>
@@ -108,10 +111,10 @@ export default function LoginPage() {
 
         {/* Title */}
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-white leading-tight">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-tight">
             Sign In to Seller Central
           </h1>
-          <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+          <p className="mt-0.5 text-xs sm:text-sm text-neutral-400">
             Access inventory catalog, order fulfillment, and wholesale analytics.
           </p>
         </div>
@@ -123,7 +126,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 dark:bg-red-950/40 p-2.5 text-xs text-red-700 dark:text-red-300"
+              className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-950/40 p-2.5 text-xs text-red-300"
             >
               <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
               <div className="flex-1 leading-snug font-medium text-[11px]">
@@ -134,15 +137,15 @@ export default function LoginPage() {
         </AnimatePresence>
 
         {/* Quick Demo Access Pill */}
-        <div className="flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] px-3 py-2 text-xs">
-          <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 text-[11px]">
-            <Sparkles size={13} className="text-[#15803D] dark:text-[#CCFF00]" />
+        <div className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/80 px-3 py-2 text-xs text-neutral-300">
+          <div className="flex items-center gap-1.5 text-neutral-300 text-[11px]">
+            <Sparkles size={13} className="text-[#CCFF00]" />
             <span>Demo merchant account</span>
           </div>
           <button
             type="button"
             onClick={fillDemoAccount}
-            className="font-bold text-[11px] text-[#15803D] dark:text-[#CCFF00] hover:underline cursor-pointer"
+            className="font-bold text-[11px] text-[#CCFF00] hover:underline cursor-pointer"
           >
             Auto-fill credentials
           </button>
@@ -154,12 +157,12 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="sellerEmail"
-              className="block text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-1"
+              className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1"
             >
               Corporate Email Address
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400 dark:text-neutral-500">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500">
                 <Mail size={14} />
               </span>
               <input
@@ -173,7 +176,7 @@ export default function LoginPage() {
                 }}
                 autoComplete="email"
                 placeholder="seller@flash.enterprise"
-                className="w-full h-11 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] pl-10 pr-3 text-xs font-semibold text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
+                className="w-full h-11 rounded-xl border border-neutral-800 bg-[#141720] pl-10 pr-3 text-xs font-semibold text-white placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
               />
             </div>
           </div>
@@ -183,13 +186,13 @@ export default function LoginPage() {
             <div className="flex items-center justify-between mb-1">
               <label
                 htmlFor="sellerPassword"
-                className="block text-[9px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400"
+                className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400"
               >
                 Password
               </label>
             </div>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-400 dark:text-neutral-500">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500">
                 <Lock size={14} />
               </span>
               <input
@@ -203,12 +206,12 @@ export default function LoginPage() {
                 }}
                 autoComplete="current-password"
                 placeholder="••••••••••••"
-                className="w-full h-11 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-[#141720] pl-10 pr-10 text-xs font-semibold text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
+                className="w-full h-11 rounded-xl border border-neutral-800 bg-[#141720] pl-10 pr-10 text-xs font-semibold text-white placeholder-neutral-500 outline-none transition focus:border-[#CCFF00] focus:ring-1 focus:ring-[#CCFF00]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-500 hover:text-white"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -217,12 +220,12 @@ export default function LoginPage() {
 
           {/* Remember me */}
           <div className="flex items-center justify-between text-xs">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-neutral-600 dark:text-neutral-400 text-[11px]">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-neutral-400 text-xs">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={e => setRememberMe(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-neutral-300 dark:border-neutral-700 text-[#CCFF00] focus:ring-[#CCFF00]"
+                className="h-3.5 w-3.5 rounded border-neutral-700 bg-neutral-900 text-[#CCFF00] focus:ring-[#CCFF00]"
               />
               <span>Remember this workstation</span>
             </label>
@@ -251,11 +254,11 @@ export default function LoginPage() {
         </form>
 
         {/* Register Navigation */}
-        <div className="pt-1 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+        <div className="pt-1 text-center text-xs text-neutral-400">
           New to Flash Business?{' '}
           <Link
             href="/auth/signup"
-            className="font-bold text-neutral-900 dark:text-[#CCFF00] hover:underline"
+            className="font-bold text-[#CCFF00] hover:text-white hover:underline transition"
           >
             Register as a merchant supplier →
           </Link>
